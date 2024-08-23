@@ -36,6 +36,7 @@
         <a href="#" onclick="loadPage('页面/主页.html')">主页</a>
         <a href="#" onclick="loadPage('页面/关于.html')">关于</a>
         <a href="#" onclick="loadPage('页面/联系.html')">联系</a>
+        <a href="#" onclick="loadPage('页面/设置.html')">设置</a>
     </div>
 
     <div id="content" class="content active">
@@ -54,8 +55,18 @@
             xhr.send();
         }
 
+        function saveDefaultPage() {
+            var defaultPage = document.getElementById('defaultPage').value;
+            localStorage.setItem('defaultPage', defaultPage);
+        }
+
+        function loadDefaultPage() {
+            var defaultPage = localStorage.getItem('defaultPage') || '主页.html';
+            loadPage('页面/' + defaultPage);
+        }
+
         // 加载默认页面
-        loadPage('页面/主页.html');
+        loadDefaultPage();
     </script>
 </body>
 </html>
