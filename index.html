@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基础网页</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .navbar {
+            display: flex;
+            background-color: #333;
+        }
+        .navbar a {
+            padding: 14px 20px;
+            display: block;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+        }
+        .navbar a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        .content {
+            display: none;
+        }
+        .content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="#" onclick="loadPage('页面/主页.html')">主页</a>
+        <a href="#" onclick="loadPage('页面/关于.html')">关于</a>
+        <a href="#" onclick="loadPage('页面/联系.html')">联系</a>
+    </div>
+
+    <div id="content" class="content active">
+        <!-- 内容加载区 -->
+    </div>
+
+    <script>
+        function loadPage(page) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', page, true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    document.getElementById('content').innerHTML = xhr.responseText;
+                }
+            };
+            xhr.send();
+        }
+
+        // 加载默认页面
+        loadPage('页面/主页.html');
+    </script>
+</body>
+</html>
