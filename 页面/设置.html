@@ -1,10 +1,21 @@
-<div>
+<div class="settings">
     <h1>设置</h1>
-    <p>选择启动默认页面：</p>
-    <select id="defaultPage">
-        <option value="主页.html">主页</option>
-        <option value="关于.html">关于</option>
-        <option value="联系.html">联系</option>
-    </select>
-    <button onclick="saveDefaultPage()">保存</button>
+    <div class="setting-item">
+        <label for="defaultPage">选择启动默认页面：</label>
+        <select id="defaultPage">
+            <option value="主页.html">主页</option>
+            <option value="关于.html">关于</option>
+            <option value="联系.html">联系</option>
+        </select>
+        <button onclick="saveDefaultPage()">保存</button>
+    </div>
+    <div class="setting-item">
+        <label for="themeToggle">选择主题：</label>
+        <label class="switch">
+            <input type="checkbox" id="themeToggle">
+            <span class="slider round"></span>
+        </label>
+        <br>
+        <span id="themeLabel"></span>
+    </div>
 </div>

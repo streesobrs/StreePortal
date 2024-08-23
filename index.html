@@ -4,58 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>基础网页</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-        .navbar {
-            display: flex;
-            background-color: #333;
-            padding: 10px;
-        }
-        .navbar a {
-            padding: 14px 20px;
-            display: block;
-            color: white;
-            text-align: center;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-        .navbar a:hover {
-            background-color: #ddd;
-            color: black;
-        }
-        .content {
-            padding: 20px;
-            background-color: white;
-            margin: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .content.active {
-            display: block;
-        }
-        .content.hidden {
-            display: none;
-        }
-        .settings {
-            margin-top: 20px;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #333;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #555;
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <div class="navbar">
@@ -77,11 +26,18 @@
                 if (xhr.readyState === 4 && xhr.status === 200) {
                     document.getElementById('content').innerHTML = xhr.responseText;
                     if (page === '页面/设置.html') {
-                        document.getElementById('defaultPage').value = localStorage.getItem('defaultPage') || '主页.html';
+                        loadSettings();
                     }
                 }
             };
             xhr.send();
+        }
+
+        function loadSettings() {
+            document.getElementById('defaultPage').value = localStorage.getItem('defaultPage') || '主页.html';
+            document.getElementById('themeToggle').checked = localStorage.getItem('theme') === 'dark';
+            document.getElementById('themeToggle').addEventListener('change', toggleTheme);
+            updateThemeLabel();
         }
 
         function saveDefaultPage() {
@@ -90,13 +46,38 @@
             alert('默认页面已保存！');
         }
 
+        function toggleTheme() {
+            var theme = document.getElementById('themeToggle').checked ? 'dark' : 'light';
+            localStorage.setItem('theme', theme);
+            applyTheme();
+            updateThemeLabel();
+        }
+
+        function applyTheme() {
+            var theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.body.classList.add('dark-theme');
+                document.body.classList.remove('light-theme');
+            } else {
+                document.body.classList.add('light-theme');
+                document.body.classList.remove('dark-theme');
+            }
+        }
+
+        function updateThemeLabel() {
+            var theme = localStorage.getItem('theme') || 'light';
+            var themeLabel = document.getElementById('themeLabel');
+            themeLabel.textContent = theme === 'dark' ? '当前主题：深色模式' : '当前主题：浅色模式';
+        }
+
         function loadDefaultPage() {
             var defaultPage = localStorage.getItem('defaultPage') || '主页.html';
             loadPage('页面/' + defaultPage);
         }
 
-        // 加载默认页面
+        // 加载默认页面和应用主题
         loadDefaultPage();
+        applyTheme();
     </script>
 </body>
 </html>
