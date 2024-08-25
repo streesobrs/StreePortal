@@ -28,10 +28,19 @@
         <br>
         <span id="themeLabel"></span>
     </div>
+    <div id="versionInfo">
+        版本号: <span id="versionNumber"></span>
+    </div>
 </div>
 <script src="../js/index.js"></script>
 <script>
     // 加载设置
     loadSettings();
     applyTheme();
+
+    fetch('version.txt')
+        .then(response => response.text())
+        .then(version => {
+            document.getElementById('versionNumber').textContent = version.trim();
+        });
 </script>
