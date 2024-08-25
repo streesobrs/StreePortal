@@ -8,12 +8,11 @@ function loadSettings() {
     document.getElementById('backgroundColor').value = localStorage.getItem('backgroundColor') || '#ffffff';
     document.body.style.backgroundColor = localStorage.getItem('backgroundColor') || '#ffffff';
 
-    // 检查当前主题并设置背景颜色
     var theme = localStorage.getItem('theme') || 'light';
     if (theme === 'dark') {
-        document.body.style.backgroundColor = '#333333'; // 深色模式背景颜色
+        document.body.style.backgroundColor = '#333333';
     } else {
-        document.body.style.backgroundColor = localStorage.getItem('backgroundColor') || '#ffffff'; // 浅色模式背景颜色
+        document.body.style.backgroundColor = localStorage.getItem('backgroundColor') || '#ffffff';
     }
 }
 
@@ -63,11 +62,10 @@ function toggleTheme() {
     applyTheme();
     updateThemeLabel();
 
-    // 设置背景颜色
     if (theme === 'dark') {
-        document.body.style.backgroundColor = '#333333'; // 深色模式背景颜色
+        document.body.style.backgroundColor = '#333333';
     } else {
-        document.body.style.backgroundColor = localStorage.getItem('backgroundColor') || '#ffffff'; // 浅色模式背景颜色
+        document.body.style.backgroundColor = localStorage.getItem('backgroundColor') || '#ffffff';
     }
 }
 
@@ -105,4 +103,21 @@ function loadPage(page) {
 function loadDefaultPage() {
     var defaultPage = localStorage.getItem('defaultPage') || '主页.html';
     loadPage('页面/' + defaultPage);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/StreePortal/version.txt')
+    .then(response => response.text())
+    .then(version => {
+        localStorage.setItem('version', version.trim());
+        updateVersionNumber();
+    })
+    .catch(error => console.error('Error fetching version:', error));
+});
+
+function updateVersionNumber() {
+    const storedVersion = localStorage.getItem('version');
+    if (storedVersion) {
+        document.getElementById('versionNumber').textContent = storedVersion;
+    }
 }

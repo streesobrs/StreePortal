@@ -141,3 +141,10 @@ body.dark-theme {
 body.dark-theme .content {
     background-color: #444;
 }
+
+#versionInfo {
+    position: fixed;
+    right: 1px;
+    bottom: 1px;
+    height: auto;
+}
