@@ -10,6 +10,16 @@
         <button onclick="saveDefaultPage()">保存</button>
     </div>
     <div class="setting-item">
+        <label for="notifications">启用通知：</label>
+        <input type="checkbox" id="notifications">
+        <button onclick="saveNotifications()">保存</button>
+    </div>
+    <div class="setting-item">
+        <label for="backgroundColor">选择背景颜色：</label>
+        <input type="color" id="backgroundColor">
+        <button onclick="saveBackgroundColor()">保存</button>
+    </div>    
+    <div class="setting-item">
         <label for="themeToggle">选择主题：</label>
         <label class="switch">
             <input type="checkbox" id="themeToggle">
@@ -19,3 +29,9 @@
         <span id="themeLabel"></span>
     </div>
 </div>
+<script src="../js/index.js"></script>
+<script>
+    // 加载设置
+    loadSettings();
+    applyTheme();
+</script>

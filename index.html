@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>基础网页</title>
+    <title>(⊙o⊙)？</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
     <div class="navbar">
         <a href="#" onclick="loadPage('页面/主页.html')">主页</a>
@@ -18,66 +20,12 @@
         <!-- 内容加载区 -->
     </div>
 
+    <script src="js/index.js"></script>
     <script>
-        function loadPage(page) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', page, true);
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    document.getElementById('content').innerHTML = xhr.responseText;
-                    if (page === '页面/设置.html') {
-                        loadSettings();
-                    }
-                }
-            };
-            xhr.send();
-        }
-
-        function loadSettings() {
-            document.getElementById('defaultPage').value = localStorage.getItem('defaultPage') || '主页.html';
-            document.getElementById('themeToggle').checked = localStorage.getItem('theme') === 'dark';
-            document.getElementById('themeToggle').addEventListener('change', toggleTheme);
-            updateThemeLabel();
-        }
-
-        function saveDefaultPage() {
-            var defaultPage = document.getElementById('defaultPage').value;
-            localStorage.setItem('defaultPage', defaultPage);
-            alert('默认页面已保存！');
-        }
-
-        function toggleTheme() {
-            var theme = document.getElementById('themeToggle').checked ? 'dark' : 'light';
-            localStorage.setItem('theme', theme);
-            applyTheme();
-            updateThemeLabel();
-        }
-
-        function applyTheme() {
-            var theme = localStorage.getItem('theme') || 'light';
-            if (theme === 'dark') {
-                document.body.classList.add('dark-theme');
-                document.body.classList.remove('light-theme');
-            } else {
-                document.body.classList.add('light-theme');
-                document.body.classList.remove('dark-theme');
-            }
-        }
-
-        function updateThemeLabel() {
-            var theme = localStorage.getItem('theme') || 'light';
-            var themeLabel = document.getElementById('themeLabel');
-            themeLabel.textContent = theme === 'dark' ? '当前主题：深色模式' : '当前主题：浅色模式';
-        }
-
-        function loadDefaultPage() {
-            var defaultPage = localStorage.getItem('defaultPage') || '主页.html';
-            loadPage('页面/' + defaultPage);
-        }
-
         // 加载默认页面和应用主题
         loadDefaultPage();
         applyTheme();
     </script>
 </body>
+
 </html>
