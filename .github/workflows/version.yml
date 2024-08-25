@@ -24,7 +24,7 @@ jobs:
         if [ -f version.txt ]; then
           version=$(cat version.txt | grep -oP '^\d+\.\d+\.\d+')
         else
-          version="0.0.0"
+          version="1.0.0"
         fi
         IFS='.' read -r -a parts <<< "$version"
         parts[2]=$((parts[2] + 1))
