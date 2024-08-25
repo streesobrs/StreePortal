@@ -38,7 +38,7 @@
     loadSettings();
     applyTheme();
 
-    fetch('version.txt')
+    fetch('../version.txt')
         .then(response => response.text())
         .then(version => {
             document.getElementById('versionNumber').textContent = version.trim();
