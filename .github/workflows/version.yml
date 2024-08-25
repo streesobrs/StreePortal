@@ -1,0 +1,43 @@
+name: Generate Version
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Increment version
+      id: increment
+      run: |
+        if [ -f version.txt ]; then
+          version=$(cat version.txt | grep -oP '^\d+\.\d+\.\d+')
+        else
+          version="0.0.0"
+        fi
+        IFS='.' read -r -a parts <<< "$version"
+        parts[2]=$((parts[2] + 1))
+        new_version="${parts[0]}.${parts[1]}.${parts[2]}"
+        date=$(date +'%Y-%m-%d')
+        echo "$new_version ($date)" > version.txt
+        echo "::set-output name=new_version::$new_version"
+        echo "::set-output name=date::$date"
+
+    - name: Commit version file
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add version.txt
+        git commit -m 'Increment version to ${{ steps.increment.outputs.new_version }} on ${{ steps.increment.outputs.date }}'
+        git push
