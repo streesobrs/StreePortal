@@ -34,13 +34,16 @@
 </div>
 <script src="../js/index.js"></script>
 <script>
-    // 加载设置
-    loadSettings();
-    applyTheme();
+    document.addEventListener('DOMContentLoaded', function() {
+        // 加载设置
+        loadSettings();
+        applyTheme();
 
-    fetch('../version.txt')
-        .then(response => response.text())
-        .then(version => {
-            document.getElementById('versionNumber').textContent = version.trim();
-        });
+        fetch('/version.txt')
+            .then(response => response.text())
+            .then(version => {
+                document.getElementById('versionNumber').textContent = version.trim();
+            })
+            .catch(error => console.error('Error fetching version:', error));
+    });
 </script>
