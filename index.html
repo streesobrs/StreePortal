@@ -6,6 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>(⊙o⊙)？</title>
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        a{
+            transition: all 0.3s ease;
+        }
+        a:hover{
+            transform: scale(1.2);
+        }
+    </style>
 </head>
 
 <body>
@@ -13,9 +21,8 @@
         <a href="#" onclick="loadPage('页面/主页.html')">主页</a>
         <a href="#" onclick="loadPage('页面/关于.html')">关于</a>
         <a href="#" onclick="loadPage('页面/联系.html')">联系</a>
-        <a href="#" onclick="loadPage('页面/设置.html')">设置</a>
-    </div>
-
+        <a href="#" class="right" onclick="loadPage('页面/设置.html')">设置</a>
+    </div>    
     <div id="content" class="content active">
         <!-- 内容加载区 -->
     </div>
