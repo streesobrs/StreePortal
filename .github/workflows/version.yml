@@ -25,6 +25,12 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4 
+        with:
+          name: build-output
+          path: dist/
+
       - name: Increment version
         id: increment
         run: |
