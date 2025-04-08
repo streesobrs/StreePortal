@@ -5,58 +5,56 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: write  # 允许提交代码
+  pages: write     # 允许部署 Pages
+  id-token: write  # 允许 OIDC 身份验证
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    # 防止版本提交触发新工作流
+    # 防止版本提交触发循环构建
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'npm'  # 启用 npm 缓存加速
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4 
-        with:
-          name: build-output
-          path: dist/
-
-      - name: Increment version
-        id: increment
+      - name: Generate version
+        id: version
         run: |
+          # 版本号生成逻辑
           if [ -f version.txt ]; then
-            version=$(awk -F'[ .()]' '{print $1"."$2"."$3}' version.txt)
+            current_version=$(awk -F'[ .()]' '{print $1"."$2"."$3}' version.txt)
           else
-            version="0.0.0"
+            current_version="0.0.0"
           fi
-          
-          IFS='.' read -r -a parts <<< "$version"
-          parts[2]=$((parts[2] + 1))
-          new_version="${parts[0]}.${parts[1]}.${parts[2]}"
-          date=$(date +'%Y-%m-%d')
-          
-          echo "$new_version ($date)" > version.txt
-          echo "new_version=$new_version" >> $GITHUB_OUTPUT
-          echo "date=$date" >> $GITHUB_OUTPUT
 
-      - name: Commit version file
+          IFS='.' read -r -a parts <<< "$current_version"
+          new_patch=$((parts[2] + 1))
+          new_version="${parts[0]}.${parts[1]}.${new_patch}"
+          build_date=$(date +'%Y-%m-%d')
+
+          # 写入版本文件
+          echo "$new_version ($build_date)" > version.txt
+
+          # 输出变量
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+          echo "build_date=$build_date" >> $GITHUB_OUTPUT
+
+      - name: Commit version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
           git add version.txt
-          git commit -m '[skip ci] Increment version to ${{ steps.increment.outputs.new_version }}'
+          git commit -m "[skip ci] Auto bump version to ${{ steps.version.outputs.new_version }}"
           git push origin HEAD:main
 
       - name: Install dependencies
@@ -65,14 +63,12 @@ jobs:
       - name: Build project
         run: npm run build
         env:
-          VITE_APP_VERSION: ${{ steps.increment.outputs.new_version }}
+          VITE_APP_VERSION: ${{ steps.version.outputs.new_version }}
 
-      - name: Upload Pages artifact
+      - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          path: 'dist'
+          path: 'dist'  # 确保与 vite.config.js 的 build.outDir 一致
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
