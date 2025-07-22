@@ -52,7 +52,7 @@
                 </div>
                 
                 <!-- 导航控制按钮 -->
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                     <button id="back-btn" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                         <i class="fa fa-arrow-left text-gray-600"></i>
                     </button>
@@ -65,6 +65,17 @@
                     <button id="home-btn" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
                         <i class="fa fa-home text-gray-600"></i>
                     </button>
+                    
+                    <!-- 数据导入导出按钮 -->
+                    <div class="border-l border-gray-200 pl-2 ml-2">
+                        <button id="export-btn" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors" title="导出页面数据">
+                            <i class="fa fa-download text-gray-600"></i>
+                        </button>
+                        <label for="import-btn" class="cursor-pointer p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors" title="导入页面数据">
+                            <i class="fa fa-upload text-gray-600"></i>
+                            <input id="import-btn" type="file" accept=".json" class="hidden">
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -115,7 +126,7 @@
     <!-- 页脚 -->
     <footer class="bg-dark text-gray-400 py-4 mt-auto">
         <div class="container mx-auto px-4 text-center text-sm">
-            <p>&copy; 2023 页面汇总导航 | 顶部导航栏始终可见</p>
+            <p>&copy; 2023 页面汇总导航 | 支持跨设备数据同步</p>
         </div>
     </footer>
 
@@ -171,6 +182,11 @@
                 </button>
             </form>
         </div>
+    </div>
+
+    <!-- 提示消息 -->
+    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-dark text-white px-4 py-3 rounded-lg shadow-lg z-50 hidden opacity-0 transition-opacity duration-300">
+        <span id="toast-message"></span>
     </div>
 
     <script>
@@ -245,6 +261,10 @@
         const contentIframe = document.getElementById('content-iframe');
         const currentPageTitle = document.getElementById('current-page-title');
         const closeIframeBtn = document.getElementById('close-iframe');
+        const exportBtn = document.getElementById('export-btn');
+        const importBtn = document.getElementById('import-btn');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
 
         // 渲染页面卡片
         function renderPageCards() {
@@ -270,7 +290,7 @@
                                 <i class="fa fa-pencil"></i>
                             </button>
                             <button class="delete-btn px-3 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 hover:text-red-500 transition-colors" data-index="${index}">
-                                <i class="fa fa-trash"></i>
+                                    <i class="fa fa-trash"></i>
                             </button>
                         </div>
                     </div>
@@ -292,6 +312,7 @@
                         pages.splice(index, 1);
                         renderPageCards();
                         savePagesToLocalStorage();
+                        showToast('页面已删除');
                     }
                 });
                 
@@ -379,9 +400,11 @@
             if (iframeView.classList.contains('hidden')) {
                 // 如果在卡片视图，重新渲染卡片
                 renderPageCards();
+                showToast('已刷新');
             } else {
                 // 如果在iframe视图，刷新iframe
                 contentIframe.src = contentIframe.src;
+                showToast('页面已刷新');
             }
         }
 
@@ -451,6 +474,79 @@
             return false;
         }
 
+        // 导出页面数据
+        function exportPageData() {
+            const dataStr = JSON.stringify(pages, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `page-collection-${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 0);
+            
+            showToast('页面数据已导出');
+        }
+
+        // 导入页面数据
+        function importPageData(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const importedPages = JSON.parse(e.target.result);
+                    
+                    // 验证导入的数据格式
+                    if (Array.isArray(importedPages) && importedPages.every(page => 
+                        page.name && page.url && page.icon
+                    )) {
+                        pages = importedPages;
+                        renderPageCards();
+                        savePagesToLocalStorage();
+                        showToast('页面数据已导入');
+                    } else {
+                        showToast('导入失败：无效的数据格式', true);
+                    }
+                } catch (error) {
+                    showToast('导入失败：文件格式错误', true);
+                    console.error('Import error:', error);
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // 显示提示消息
+        function showToast(message, isError = false) {
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden', 'opacity-0');
+            
+            if (isError) {
+                toast.classList.add('bg-red-600');
+                toast.classList.remove('bg-dark');
+            } else {
+                toast.classList.add('bg-dark');
+                toast.classList.remove('bg-red-600');
+            }
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-100');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 300);
+            }, 3000);
+        }
+
         // 随机生成颜色
         function getRandomColor() {
             const colors = [
@@ -514,9 +610,11 @@
             if (editIndex === -1) {
                 // 添加新页面
                 pages.push(pageData);
+                showToast('新页面已添加');
             } else {
                 // 编辑现有页面
                 pages[editIndex] = pageData;
+                showToast('页面已更新');
             }
             
             // 重新渲染
@@ -534,6 +632,19 @@
         homeBtn.addEventListener('click', showCardsView);
         closeIframeBtn.addEventListener('click', showCardsView);
 
+        // 导出数据按钮
+        exportBtn.addEventListener('click', exportPageData);
+
+        // 导入数据按钮
+        importBtn.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                importPageData(file);
+                // 重置输入，允许重复选择同一个文件
+                importBtn.value = '';
+            }
+        });
+
         // 监听iframe加载完成事件
         contentIframe.addEventListener('load', () => {
             // 如果是历史导航，不需要额外处理
@@ -543,14 +654,17 @@
             }
             
             // 对于新加载的页面，更新历史记录
-            const currentUrl = contentIframe.src.split('/').pop();
-            const currentPage = pages.find(page => page.url === currentUrl);
-            if (currentPage) {
-                addToHistory(currentPage);
-                updateNavButtons();
+            try {
+                const currentUrl = new URL(contentIframe.src).pathname.split('/').pop();
+                const currentPage = pages.find(page => page.url === currentUrl);
+                if (currentPage) {
+                    addToHistory(currentPage);
+                    updateNavButtons();
+                }
+            } catch (error) {
+                console.error('Error processing iframe load:', error);
             }
         });
     </script>
 </body>
 </html>
-    
