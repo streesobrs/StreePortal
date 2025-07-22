@@ -36,33 +36,72 @@
                 from { opacity: 0; transform: translateY(10px); }
                 to { opacity: 1; transform: translateY(0); }
             }
+            .iframe-container {
+                min-height: calc(100vh - 13rem);
+            }
         }
     </style>
 </head>
-<body class="bg-gray-50 font-sans min-h-screen">
-    <!-- 顶部导航 -->
-    <header class="bg-white shadow-sm py-4">
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col">
+    <!-- 顶部导航栏 - 始终保持可见 -->
+    <header class="bg-white shadow-md py-3 sticky top-0 z-50">
         <div class="container mx-auto px-4">
-            <div class="flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-dark">页面汇总</h1>
-                <button id="refresh-btn" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
-                    <i class="fa fa-refresh text-gray-600"></i>
-                </button>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-dark">页面汇总</h1>
+                </div>
+                
+                <!-- 导航控制按钮 -->
+                <div class="flex items-center gap-2">
+                    <button id="back-btn" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa fa-arrow-left text-gray-600"></i>
+                    </button>
+                    <button id="forward-btn" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa fa-arrow-right text-gray-600"></i>
+                    </button>
+                    <button id="refresh-btn" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+                        <i class="fa fa-refresh text-gray-600"></i>
+                    </button>
+                    <button id="home-btn" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+                        <i class="fa fa-home text-gray-600"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </header>
 
     <!-- 主内容区 -->
-    <main class="container mx-auto px-4 py-10">
-        <!-- 页面介绍 -->
-        <div class="text-center mb-12 fade-in">
-            <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-dark mb-4">快速访问各页面</h2>
-            <p class="text-gray-600 max-w-2xl mx-auto">点击下方卡片跳转到相应页面，所有页面均可在GitHub Pages上完美运行</p>
-        </div>
+    <main class="flex-1 container mx-auto px-4 py-6">
+        <!-- 页面内容显示区域 -->
+        <div id="content-area">
+            <!-- 首页卡片视图 -->
+            <div id="cards-view" class="py-4">
+                <!-- 页面介绍 -->
+                <div class="text-center mb-8 fade-in">
+                    <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-dark mb-4">快速访问各页面</h2>
+                    <p class="text-gray-600 max-w-2xl mx-auto">点击下方卡片在本页面中加载相应内容</p>
+                </div>
 
-        <!-- 页面卡片容器 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="pages-container">
-            <!-- 页面卡片会通过JavaScript动态生成 -->
+                <!-- 页面卡片容器 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="pages-container">
+                    <!-- 页面卡片会通过JavaScript动态生成 -->
+                </div>
+            </div>
+
+            <!-- 页面加载iframe区域 -->
+            <div id="iframe-view" class="hidden">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="p-3 bg-gray-50 border-b flex justify-between items-center">
+                        <span id="current-page-title" class="text-sm font-medium text-gray-700">页面加载中...</span>
+                        <button id="close-iframe" class="p-1.5 rounded hover:bg-gray-200 transition-colors">
+                            <i class="fa fa-times text-gray-600"></i>
+                        </button>
+                    </div>
+                    <div class="iframe-container">
+                        <iframe id="content-iframe" class="w-full h-full min-h-full border-0" src="" frameborder="0"></iframe>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -74,22 +113,23 @@
     </div>
 
     <!-- 页脚 -->
-    <footer class="bg-dark text-gray-400 py-6 mt-16">
-        <div class="container mx-auto px-4 text-center">
-            <p>&copy; 2023 页面汇总导航 | 适合部署在GitHub Pages</p>
+    <footer class="bg-dark text-gray-400 py-4 mt-auto">
+        <div class="container mx-auto px-4 text-center text-sm">
+            <p>&copy; 2023 页面汇总导航 | 顶部导航栏始终可见</p>
         </div>
     </footer>
 
-    <!-- 添加页面模态框 -->
-    <div id="add-page-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+    <!-- 添加/编辑页面模态框 -->
+    <div id="page-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
         <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl fade-in">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-dark">添加新页面</h3>
+                <h3 class="text-xl font-bold text-dark" id="modal-title">添加新页面</h3>
                 <button id="close-modal" class="text-gray-500 hover:text-gray-700">
                     <i class="fa fa-times text-xl"></i>
                 </button>
             </div>
-            <form id="new-page-form" class="space-y-4">
+            <form id="page-form" class="space-y-4">
+                <input type="hidden" id="edit-index" value="-1">
                 <div>
                     <label for="page-name" class="block text-gray-700 font-medium mb-2">页面名称</label>
                     <input type="text" id="page-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="例如：项目介绍" required>
@@ -126,7 +166,7 @@
                     </div>
                     <input type="hidden" id="page-icon" value="fa-file-text-o">
                 </div>
-                <button type="submit" class="w-full py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors">
+                <button type="submit" class="w-full py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors" id="modal-submit-btn">
                     添加页面
                 </button>
             </form>
@@ -180,15 +220,31 @@
             }
         ];
 
+        // 导航历史记录
+        let navigationHistory = [];
+        let historyIndex = -1;
+        let isNavigating = false;
+
         // DOM元素
         const pagesContainer = document.getElementById('pages-container');
         const addPageBtn = document.getElementById('add-page-btn');
-        const addPageModal = document.getElementById('add-page-modal');
+        const pageModal = document.getElementById('page-modal');
         const closeModalBtn = document.getElementById('close-modal');
-        const newPageForm = document.getElementById('new-page-form');
+        const pageForm = document.getElementById('page-form');
         const iconOptions = document.querySelectorAll('.icon-option');
         const pageIconInput = document.getElementById('page-icon');
         const refreshBtn = document.getElementById('refresh-btn');
+        const modalTitle = document.getElementById('modal-title');
+        const modalSubmitBtn = document.getElementById('modal-submit-btn');
+        const editIndexInput = document.getElementById('edit-index');
+        const backBtn = document.getElementById('back-btn');
+        const forwardBtn = document.getElementById('forward-btn');
+        const homeBtn = document.getElementById('home-btn');
+        const cardsView = document.getElementById('cards-view');
+        const iframeView = document.getElementById('iframe-view');
+        const contentIframe = document.getElementById('content-iframe');
+        const currentPageTitle = document.getElementById('current-page-title');
+        const closeIframeBtn = document.getElementById('close-iframe');
 
         // 渲染页面卡片
         function renderPageCards() {
@@ -206,19 +262,32 @@
                         </div>
                         <h3 class="text-xl font-bold text-dark mb-2">${page.name}</h3>
                         <p class="text-gray-600 text-sm mb-4">${page.description}</p>
-                        <a href="${page.url}" class="inline-flex items-center text-white px-4 py-2 rounded-lg transition-colors" style="background-color: ${page.color};">
-                            访问页面 <i class="fa fa-arrow-right ml-2"></i>
-                        </a>
-                        <button class="delete-btn absolute top-3 right-3 text-gray-400 hover:text-red-500 p-1" data-index="${index}">
-                            <i class="fa fa-trash"></i>
-                        </button>
+                        <div class="flex gap-2">
+                            <button class="load-page-btn flex-1 text-center py-2 bg-primary/10 text-primary font-medium rounded-lg hover:bg-primary/20 transition-colors" data-index="${index}">
+                                加载 <i class="fa fa-arrow-right ml-1"></i>
+                            </button>
+                            <button class="edit-btn px-3 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors" data-index="${index}">
+                                <i class="fa fa-pencil"></i>
+                            </button>
+                            <button class="delete-btn px-3 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 hover:text-red-500 transition-colors" data-index="${index}">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
                 `;
                 
-                // 添加删除功能
-                card.querySelector('.delete-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const index = parseInt(e.currentTarget.getAttribute('data-index'));
+                // 加载页面功能
+                card.querySelector('.load-page-btn').addEventListener('click', () => {
+                    loadPage(index);
+                });
+                
+                // 编辑功能
+                card.querySelector('.edit-btn').addEventListener('click', () => {
+                    openEditModal(index);
+                });
+                
+                // 删除功能
+                card.querySelector('.delete-btn').addEventListener('click', () => {
                     if (confirm(`确定要删除"${pages[index].name}"吗？`)) {
                         pages.splice(index, 1);
                         renderPageCards();
@@ -230,13 +299,132 @@
             });
         }
 
-        // 打开模态框
-        function openModal() {
-            addPageModal.classList.remove('hidden');
-            // 重置表单
-            newPageForm.reset();
+        // 加载指定页面到iframe
+        function loadPage(index) {
+            const page = pages[index];
+            if (!page) return;
+            
+            // 显示iframe视图，隐藏卡片视图
+            cardsView.classList.add('hidden');
+            iframeView.classList.remove('hidden');
+            
+            // 更新当前页面标题
+            currentPageTitle.textContent = page.name;
+            
+            // 加载页面内容
+            contentIframe.src = page.url;
+            
+            // 添加到导航历史
+            addToHistory(page);
+            
+            // 更新导航按钮状态
+            updateNavButtons();
+        }
+
+        // 返回卡片视图
+        function showCardsView() {
+            iframeView.classList.add('hidden');
+            cardsView.classList.remove('hidden');
+        }
+
+        // 添加到导航历史
+        function addToHistory(page) {
+            if (isNavigating) {
+                isNavigating = false;
+                return;
+            }
+            
+            // 如果不是在历史记录末尾，清除后面的记录
+            if (historyIndex < navigationHistory.length - 1) {
+                navigationHistory = navigationHistory.slice(0, historyIndex + 1);
+            }
+            
+            // 添加新记录
+            navigationHistory.push(page);
+            historyIndex = navigationHistory.length - 1;
+        }
+
+        // 更新导航按钮状态
+        function updateNavButtons() {
+            backBtn.disabled = historyIndex <= 0;
+            forwardBtn.disabled = historyIndex >= navigationHistory.length - 1;
+        }
+
+        // 后退导航
+        function navigateBack() {
+            if (historyIndex > 0) {
+                isNavigating = true;
+                historyIndex--;
+                const page = navigationHistory[historyIndex];
+                contentIframe.src = page.url;
+                currentPageTitle.textContent = page.name;
+                updateNavButtons();
+            }
+        }
+
+        // 前进导航
+        function navigateForward() {
+            if (historyIndex < navigationHistory.length - 1) {
+                isNavigating = true;
+                historyIndex++;
+                const page = navigationHistory[historyIndex];
+                contentIframe.src = page.url;
+                currentPageTitle.textContent = page.name;
+                updateNavButtons();
+            }
+        }
+
+        // 刷新当前页面
+        function refreshCurrentPage() {
+            if (iframeView.classList.contains('hidden')) {
+                // 如果在卡片视图，重新渲染卡片
+                renderPageCards();
+            } else {
+                // 如果在iframe视图，刷新iframe
+                contentIframe.src = contentIframe.src;
+            }
+        }
+
+        // 打开添加模态框
+        function openAddModal() {
+            modalTitle.textContent = "添加新页面";
+            modalSubmitBtn.textContent = "添加页面";
+            editIndexInput.value = "-1";
+            pageForm.reset();
             pageIconInput.value = "fa-file-text-o";
+            
             // 重置图标选择
+            resetIconSelection();
+            
+            pageModal.classList.remove('hidden');
+        }
+
+        // 打开编辑模态框
+        function openEditModal(index) {
+            const page = pages[index];
+            modalTitle.textContent = "编辑页面";
+            modalSubmitBtn.textContent = "更新页面";
+            editIndexInput.value = index;
+            
+            // 填充表单数据
+            document.getElementById('page-name').value = page.name;
+            document.getElementById('page-url').value = page.url;
+            document.getElementById('page-desc').value = page.description;
+            pageIconInput.value = page.icon;
+            
+            // 重置并设置图标选择
+            resetIconSelection();
+            iconOptions.forEach(option => {
+                if (option.getAttribute('data-icon') === page.icon) {
+                    option.classList.add('border-primary', 'bg-primary/5');
+                }
+            });
+            
+            pageModal.classList.remove('hidden');
+        }
+
+        // 重置图标选择状态
+        function resetIconSelection() {
             iconOptions.forEach(option => {
                 option.classList.remove('border-primary', 'bg-primary/5');
             });
@@ -245,7 +433,7 @@
 
         // 关闭模态框
         function closeModal() {
-            addPageModal.classList.add('hidden');
+            pageModal.classList.add('hidden');
         }
 
         // 保存页面数据到本地存储
@@ -285,14 +473,14 @@
         });
 
         // 添加页面按钮点击
-        addPageBtn.addEventListener('click', openModal);
+        addPageBtn.addEventListener('click', openAddModal);
 
         // 关闭模态框按钮点击
         closeModalBtn.addEventListener('click', closeModal);
 
         // 点击模态框外部关闭
-        addPageModal.addEventListener('click', (e) => {
-            if (e.target === addPageModal) {
+        pageModal.addEventListener('click', (e) => {
+            if (e.target === pageModal) {
                 closeModal();
             }
         });
@@ -310,20 +498,27 @@
             });
         });
 
-        // 表单提交 - 添加新页面
-        newPageForm.addEventListener('submit', (e) => {
+        // 表单提交 - 添加或编辑页面
+        pageForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            const editIndex = parseInt(editIndexInput.value);
             
-            const newPage = {
+            const pageData = {
                 name: document.getElementById('page-name').value,
                 url: document.getElementById('page-url').value,
                 description: document.getElementById('page-desc').value || '无描述',
                 icon: pageIconInput.value,
-                color: getRandomColor()
+                color: editIndex === -1 ? getRandomColor() : pages[editIndex].color // 编辑时保持原有颜色
             };
             
-            // 添加到页面列表
-            pages.push(newPage);
+            if (editIndex === -1) {
+                // 添加新页面
+                pages.push(pageData);
+            } else {
+                // 编辑现有页面
+                pages[editIndex] = pageData;
+            }
+            
             // 重新渲染
             renderPageCards();
             // 保存到本地存储
@@ -332,17 +527,30 @@
             closeModal();
         });
 
-        // 刷新按钮
-        refreshBtn.addEventListener('click', () => {
-            pagesContainer.classList.add('opacity-0');
-            setTimeout(() => {
-                renderPageCards();
-                pagesContainer.classList.remove('opacity-0');
-            }, 300);
-        });
+        // 导航按钮事件
+        backBtn.addEventListener('click', navigateBack);
+        forwardBtn.addEventListener('click', navigateForward);
+        refreshBtn.addEventListener('click', refreshCurrentPage);
+        homeBtn.addEventListener('click', showCardsView);
+        closeIframeBtn.addEventListener('click', showCardsView);
 
-        // 为卡片添加动画效果
-        pagesContainer.style.transition = 'opacity 0.3s ease';
+        // 监听iframe加载完成事件
+        contentIframe.addEventListener('load', () => {
+            // 如果是历史导航，不需要额外处理
+            if (isNavigating) {
+                isNavigating = false;
+                return;
+            }
+            
+            // 对于新加载的页面，更新历史记录
+            const currentUrl = contentIframe.src.split('/').pop();
+            const currentPage = pages.find(page => page.url === currentUrl);
+            if (currentPage) {
+                addToHistory(currentPage);
+                updateNavButtons();
+            }
+        });
     </script>
 </body>
 </html>
+    
