@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>二维码安全警告</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      overflow-y: scroll; /* 允许垂直滚动 */
+    }
+
+    .video-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+
+    .video-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 50px 20px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .warning-box {
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #000;
+      border: 2px solid #e53e3e;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    .warning-box h2 {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+
+    .safety-principles {
+      background-color: rgba(255, 255, 255, 0.8);
+      color: #000;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    .safety-principles h3 {
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+    }
+
+    .safety-principles ul {
+      list-style: none;
+      padding-left: 20px;
+    }
+
+    .safety-principles li {
+      margin-bottom: 10px;
+    }
+
+    .action-btn {
+      display: block;
+      width: 200px;
+      height: 50px;
+      line-height: 50px;
+      text-align: center;
+      background-color: #e53e3e;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      margin: 0 auto;
+      transition: all 0.3s ease;
+    }
+
+    .action-btn:hover {
+      background-color: #c92a2a;
+    }
+  </style>
+</head>
+    
+<body>
+  <div class="video-container">
+    <!-- 替换为实际国内可访问的视频嵌入地址，比如 B 站的正确视频 iframe 代码 -->
+    <iframe src="https://player.bilibili.com/player.html?bvid=BV1GJ411x7h7"
+      allowfullscreen="allowfullscreen"></iframe>
+  </div>
+  <div class="content">
+    <h1>不是哥们<br><span style="color: #e53e3e;">二维码不能乱扫啊！！！</span></h1>
+    <div class="warning-box">
+      <h2>乱扫二维码 = 被鬼畜支配！</h2>
+      <p>就像无法停止的鬼畜循环，<br>乱扫二维码也会让你陷入信息泄露的无尽深渊！</p>
+      <p style="margin-top: 10px;">记住这个教训：<br><em>"扫码不规范，亲人两行泪..."</em></p>
+    </div>
+    <div class="safety-principles">
+      <h3><i class="fa fa-shield" style="color: #e53e3e; margin-right: 5px;"></i>安全三原则</h3>
+      <ul>
+        <li>不扫来源不明的二维码</li>
+        <li>不轻易在扫码后输入个人信息</li>
+        <li>遇到可疑二维码，直接关闭页面</li>
+      </ul>
+    </div>
+    <a href="#" class="action-btn">我明白了，再也不乱扫！</a>
+  </div>
+</body>
+
+</html>

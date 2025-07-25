@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,26 +38,122 @@
                 to { opacity: 1; transform: translateY(0); }
             }
             .iframe-container {
-                min-height: calc(100vh - 13rem);
+                width: 100%;
+                height: calc(100vh - 64px);
+                overflow: auto;
+            }
+            .sync-spinner {
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            .setting-item {
+                @apply flex items-center justify-between py-3 border-b border-gray-100 last:border-0;
+            }
+            .sidebar-item {
+                @apply flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-primary/5 hover:text-primary rounded-lg transition-colors cursor-pointer;
+            }
+            .sidebar-item.active {
+                @apply bg-primary/10 text-primary font-medium;
+            }
+            /* 深色模式样式 */
+            .dark body {
+                @apply bg-gray-900 text-gray-100;
+            }
+            .dark .bg-white {
+                @apply bg-gray-800;
+            }
+            .dark .bg-gray-50 {
+                @apply bg-gray-800;
+            }
+            .dark .bg-gray-100 {
+                @apply bg-gray-800;
+            }
+            .dark .text-gray-600, .dark .text-gray-500, .dark .text-gray-700, .dark .text-gray-800 {
+                @apply text-gray-300;
+            }
+            .dark .border-gray-200 {
+                @apply border-gray-700;
+            }
+            .dark .bg-yellow-50 {
+                @apply bg-yellow-900/30;
+            }
+            .dark .border-yellow-100 {
+                @apply border-yellow-800;
+            }
+            .dark .text-yellow-800, .dark .text-yellow-700 {
+                @apply text-yellow-300;
+            }
+            /* 预览卡片样式 */
+            .preview-card {
+                @apply relative overflow-hidden transition-all duration-300;
+            }
+            /* 自定义滚动条 */
+            .custom-scrollbar::-webkit-scrollbar {
+                @apply w-2;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+                @apply bg-gray-100 dark:bg-gray-800 rounded-full;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                @apply bg-gray-300 dark:bg-gray-600 rounded-full hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors;
+            }
+            /* 外观设置区域专用滚动样式 */
+            .appearance-scroll-container {
+                max-height: 600px;
+                overflow-y: auto;
+                padding-right: 8px;
+				padding: 5px;
+            }
+            .appearance-scroll-container::-webkit-scrollbar {
+                width: 6px;
+            }
+            .appearance-scroll-container::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .appearance-scroll-container::-webkit-scrollbar-thumb {
+                background-color: rgba(156, 163, 175, 0.5);
+                border-radius: 3px;
+            }
+            .appearance-scroll-container::-webkit-scrollbar-thumb:hover {
+                background-color: rgba(156, 163, 175, 0.8);
+            }
+            /* 全屏容器样式 */
+            .full-height-container {
+                min-height: calc(100vh - 64px);
+                display: flex;
+                flex-direction: column;
+            }
+            .content-wrapper {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
             }
         }
     </style>
 </head>
-<body class="bg-gray-50 font-sans min-h-screen flex flex-col">
-    <!-- 顶部导航栏 - 始终保持可见 -->
-    <header class="bg-white shadow-md py-3 sticky top-0 z-50">
+
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col transition-colors duration-300">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-md py-3 sticky top-0 z-50 transition-colors duration-300" id="navbar">
         <div class="container mx-auto px-4">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center">
-                    <h1 class="text-xl font-bold text-dark">页面汇总</h1>
+                    <h1 class="text-xl font-bold text-dark transition-colors duration-300">页面汇总</h1>
                 </div>
-                
+
                 <!-- 导航控制按钮 -->
                 <div class="flex items-center gap-2 flex-wrap">
-                    <button id="back-btn" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <button id="back-btn"
+                        class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
                         <i class="fa fa-arrow-left text-gray-600"></i>
                     </button>
-                    <button id="forward-btn" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <button id="forward-btn"
+                        class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
                         <i class="fa fa-arrow-right text-gray-600"></i>
                     </button>
                     <button id="refresh-btn" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -65,606 +162,676 @@
                     <button id="home-btn" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
                         <i class="fa fa-home text-gray-600"></i>
                     </button>
-                    
-                    <!-- 数据导入导出按钮 -->
+
+                    <!-- 云端同步按钮 -->
                     <div class="border-l border-gray-200 pl-2 ml-2">
-                        <button id="export-btn" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors" title="导出页面数据">
-                            <i class="fa fa-download text-gray-600"></i>
+                        <button id="sync-btn" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                            title="与云端同步数据">
+                            <i class="fa fa-cloud text-gray-600"></i>
                         </button>
-                        <label for="import-btn" class="cursor-pointer p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors" title="导入页面数据">
-                            <i class="fa fa-upload text-gray-600"></i>
-                            <input id="import-btn" type="file" accept=".json" class="hidden">
-                        </label>
                     </div>
+
+                    <!-- 设置按钮 -->
+                    <button id="settings-btn" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                        title="设置">
+                        <i class="fa fa-cog text-gray-600"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- 主内容区 -->
-    <main class="flex-1 container mx-auto px-4 py-6">
+    <!-- 主内容区 - 全屏容器 -->
+    <main class="flex-1 container mx-auto px-4 py-6 full-height-container">
         <!-- 页面内容显示区域 -->
-        <div id="content-area">
+        <div id="content-area" class="content-wrapper">
             <!-- 首页卡片视图 -->
-            <div id="cards-view" class="py-4">
+            <div id="cards-view" class="py-4 flex-1">
                 <!-- 页面介绍 -->
                 <div class="text-center mb-8 fade-in">
-                    <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-dark mb-4">快速访问各页面</h2>
-                    <p class="text-gray-600 max-w-2xl mx-auto">点击下方卡片在本页面中加载相应内容</p>
+                    <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-dark mb-4 transition-colors duration-300">快速访问各页面</h2>
+                    <p class="text-gray-600 max-w-2xl mx-auto transition-colors duration-300">点击下方卡片在本页面中加载相应内容</p>
                 </div>
 
                 <!-- 页面卡片容器 -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="pages-container">
-                    <!-- 页面卡片会通过JavaScript动态生成 -->
+                    <!-- 示例卡片1 -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover fade-in" style="animation-delay: 0.1s">
+                        <div class="p-6">
+                            <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                                <i class="fa fa-file-text-o text-primary text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-dark mb-2 transition-colors duration-300">文档页面</h3>
+                            <p class="text-gray-600 text-sm mb-4 transition-colors duration-300">查看和管理所有文档内容的页面</p>
+                            <button class="w-full text-center py-2 bg-primary/10 text-primary font-medium rounded-lg hover:bg-primary/20 transition-colors load-page-btn" data-page="documents.html" data-title="文档页面">
+                                加载 <i class="fa fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 示例卡片2 -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover fade-in" style="animation-delay: 0.2s">
+                        <div class="p-6">
+                            <div class="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
+                                <i class="fa fa-bar-chart text-secondary text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-dark mb-2 transition-colors duration-300">数据统计</h3>
+                            <p class="text-gray-600 text-sm mb-4 transition-colors duration-300">查看各类数据统计和图表分析</p>
+                            <button class="w-full text-center py-2 bg-secondary/10 text-secondary font-medium rounded-lg hover:bg-secondary/20 transition-colors load-page-btn" data-page="statistics.html" data-title="数据统计">
+                                加载 <i class="fa fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 示例卡片3 -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover fade-in" style="animation-delay: 0.3s">
+                        <div class="p-6">
+                            <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center mb-4">
+                                <i class="fa fa-users text-accent text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-dark mb-2 transition-colors duration-300">用户管理</h3>
+                            <p class="text-gray-600 text-sm mb-4 transition-colors duration-300">管理系统用户和权限设置</p>
+                            <button class="w-full text-center py-2 bg-accent/10 text-accent font-medium rounded-lg hover:bg-accent/20 transition-colors load-page-btn" data-page="users.html" data-title="用户管理">
+                                加载 <i class="fa fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- 页面加载iframe区域 -->
-            <div id="iframe-view" class="hidden">
-                <div class="bg-white rounded-xl shadow-md overflow-hidden">
-                    <div class="p-3 bg-gray-50 border-b flex justify-between items-center">
-                        <span id="current-page-title" class="text-sm font-medium text-gray-700">页面加载中...</span>
+            <div id="iframe-view" class="hidden flex-1 flex flex-col">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden transition-colors duration-300 flex-1 flex flex-col" id="iframe-card">
+                    <div class="p-3 bg-gray-50 border-b flex justify-between items-center transition-colors duration-300">
+                        <span id="current-page-title" class="text-sm font-medium text-gray-700 transition-colors duration-300">页面加载中...</span>
                         <button id="close-iframe" class="p-1.5 rounded hover:bg-gray-200 transition-colors">
                             <i class="fa fa-times text-gray-600"></i>
                         </button>
                     </div>
-                    <div class="iframe-container">
-                        <iframe id="content-iframe" class="w-full h-full min-h-full border-0" src="" frameborder="0"></iframe>
+                    <div class="iframe-container flex-1">
+                        <iframe id="content-iframe" class="w-full h-full min-h-full border-0" src=""
+                            frameborder="0"></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 设置页面 -->
+            <div id="settings-view" class="hidden bg-white rounded-xl shadow-md overflow-hidden transition-colors duration-300 flex-1 flex flex-col">
+                <div class="flex flex-col lg:flex-row flex-1 overflow-hidden">
+                    <!-- 侧边栏 -->
+                    <div class="w-full lg:w-64 bg-gray-50 border-r border-gray-200 p-4 transition-colors duration-300">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 transition-colors duration-300">设置</h3>
+                        <div class="space-y-1">
+                            <div class="sidebar-item active" data-tab="page-management">
+                                <i class="fa fa-th-large w-5 text-center"></i>
+                                <span>页面管理</span>
+                            </div>
+                            <div class="sidebar-item" data-tab="appearance">
+                                <i class="fa fa-paint-brush w-5 text-center"></i>
+                                <span>外观设置</span>
+                            </div>
+                            <div class="sidebar-item" data-tab="sync">
+                                <i class="fa fa-cloud w-5 text-center"></i>
+                                <span>同步设置</span>
+                            </div>
+                            <div class="sidebar-item" data-tab="data">
+                                <i class="fa fa-database w-5 text-center"></i>
+                                <span>数据管理</span>
+                            </div>
+                            <div class="sidebar-item" data-tab="about">
+                                <i class="fa fa-info-circle w-5 text-center"></i>
+                                <span>关于</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 设置内容区 -->
+                    <div class="flex-1 p-6 overflow-y-auto custom-scrollbar">
+                        <!-- 页面管理 -->
+                        <div class="settings-tab active" id="page-management-tab">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-xl font-bold text-gray-800 transition-colors duration-300">页面管理</h2>
+                                <button id="add-page-in-settings-btn"
+                                    class="px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors">
+                                    <i class="fa fa-plus mr-2"></i>添加新页面
+                                </button>
+                            </div>
+
+                            <!-- 页面列表 -->
+                            <div class="bg-gray-50 rounded-lg p-4 transition-colors duration-300">
+                                <h3 class="font-medium text-gray-700 mb-4 transition-colors duration-300">已添加页面</h3>
+                                <div id="page-list" class="space-y-2">
+                                    <!-- 页面条目示例 -->
+                                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm transition-colors duration-300">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
+                                                <i class="fa fa-file-text-o text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-medium text-gray-800 transition-colors duration-300">文档页面</h4>
+                                                <p class="text-xs text-gray-500 transition-colors duration-300">documents.html</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button class="p-1.5 text-gray-500 hover:text-primary transition-colors" title="编辑">
+                                                <i class="fa fa-pencil"></i>
+                                            </button>
+                                            <button class="p-1.5 text-gray-500 hover:text-red-500 transition-colors" title="删除">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm transition-colors duration-300">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded bg-secondary/10 flex items-center justify-center">
+                                                <i class="fa fa-bar-chart text-secondary"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-medium text-gray-800 transition-colors duration-300">数据统计</h4>
+                                                <p class="text-xs text-gray-500 transition-colors duration-300">statistics.html</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button class="p-1.5 text-gray-500 hover:text-primary transition-colors" title="编辑">
+                                                <i class="fa fa-pencil"></i>
+                                            </button>
+                                            <button class="p-1.5 text-gray-500 hover:text-red-500 transition-colors" title="删除">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm transition-colors duration-300">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded bg-accent/10 flex items-center justify-center">
+                                                <i class="fa fa-users text-accent"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-medium text-gray-800 transition-colors duration-300">用户管理</h4>
+                                                <p class="text-xs text-gray-500 transition-colors duration-300">users.html</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button class="p-1.5 text-gray-500 hover:text-primary transition-colors" title="编辑">
+                                                <i class="fa fa-pencil"></i>
+                                            </button>
+                                            <button class="p-1.5 text-gray-500 hover:text-red-500 transition-colors" title="删除">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 外观设置 - 带滚动条的区域 -->
+                        <div class="settings-tab hidden" id="appearance-tab">
+                            <div class="flex flex-col lg:flex-row gap-8">
+                                <!-- 左侧设置选项 - 带滚动条 -->
+                                <div class="w-full lg:w-1/2 appearance-scroll-container">
+                                    <h2 class="text-xl font-bold text-gray-800 mb-6 transition-colors duration-300">外观设置</h2>
+                                    
+                                    <div class="space-y-6">
+                                        <!-- 主题模式 -->
+                                        <div>
+                                            <h3 class="font-medium text-gray-700 mb-3 transition-colors duration-300">主题模式</h3>
+                                            <div class="flex gap-4 flex-wrap">
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="theme-mode" value="light" class="sr-only peer" checked>
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">浅色模式</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="theme-mode" value="dark" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">深色模式</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="theme-mode" value="system" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">跟随系统</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- 主色调选择 -->
+                                        <div>
+                                            <h3 class="font-medium text-gray-700 mb-3 transition-colors duration-300">主色调</h3>
+                                            <div class="flex flex-wrap gap-3">
+                                                <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all" data-color="#3B82F6" style="background-color: #3B82F6;"></button>
+                                                <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all" data-color="#10B981" style="background-color: #10B981;"></button>
+                                                <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all" data-color="#8B5CF6" style="background-color: #8B5CF6;"></button>
+                                                <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all" data-color="#F59E0B" style="background-color: #F59E0B;"></button>
+                                                <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all" data-color="#EF4444" style="background-color: #EF4444;"></button>
+                                                <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all" data-color="#06B6D4" style="background-color: #06B6D4;"></button>
+                                                <button type="button" class="color-option w-8 h-8 rounded-full border-2 border-transparent hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all" data-color="#EC4899" style="background-color: #EC4899;"></button>
+                                                <input type="hidden" id="primary-color" value="#3B82F6">
+                                            </div>
+                                        </div>
+
+                                        <!-- 卡片布局 -->
+                                        <div>
+                                            <h3 class="font-medium text-gray-700 mb-3 transition-colors duration-300">卡片布局</h3>
+                                            <div class="flex gap-4">
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="card-layout" value="grid" class="sr-only peer" checked>
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">网格布局</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="card-layout" value="list" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">列表布局</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- 卡片阴影强度 -->
+                                        <div>
+                                            <h3 class="font-medium text-gray-700 mb-3 transition-colors duration-300">卡片阴影强度</h3>
+                                            <div class="flex gap-4 flex-wrap">
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="card-shadow" value="none" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">无阴影</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="card-shadow" value="light" class="sr-only peer" checked>
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">轻微</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="card-shadow" value="medium" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">中等</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="card-shadow" value="strong" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">强烈</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- 卡片圆角大小 -->
+                                        <div>
+                                            <h3 class="font-medium text-gray-700 mb-3 transition-colors duration-300">卡片圆角大小</h3>
+                                            <div class="flex gap-4">
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="card-radius" value="sm" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">小</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="card-radius" value="md" class="sr-only peer" checked>
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">中等</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="card-radius" value="lg" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">大</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- 卡片间距 -->
+                                        <div>
+                                            <h3 class="font-medium text-gray-700 mb-3 transition-colors duration-300">卡片间距</h3>
+                                            <div class="flex gap-4">
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="card-spacing" value="tight" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">紧凑</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="card-spacing" value="normal" class="sr-only peer" checked>
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">适中</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="card-spacing" value="loose" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">宽松</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- 导航栏样式 -->
+                                        <div>
+                                            <h3 class="font-medium text-gray-700 mb-3 transition-colors duration-300">导航栏样式</h3>
+                                            <div class="flex gap-4 flex-wrap">
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="navbar-style" value="standard" class="sr-only peer" checked>
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">标准</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="navbar-style" value="minimal" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">简约</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="navbar-style" value="compact" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">紧凑</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- 卡片动画 -->
+                                        <div>
+                                            <h3 class="font-medium text-gray-700 mb-3 transition-colors duration-300">卡片动画</h3>
+                                            <label class="inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="enable-animations" class="sr-only peer" checked>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                <span class="ml-3 text-gray-700 transition-colors duration-300">启用卡片悬停动画</span>
+                                            </label>
+                                        </div>
+
+                                        <!-- 卡片图标大小 -->
+                                        <div>
+                                            <h3 class="font-medium text-gray-700 mb-3 transition-colors duration-300">卡片图标大小</h3>
+                                            <div class="flex gap-4">
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="icon-size" value="small" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">小</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="icon-size" value="medium" class="sr-only peer" checked>
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">中等</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="icon-size" value="large" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">大</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- 额外的设置项，用于演示滚动效果 -->
+                                        <div>
+                                            <h3 class="font-medium text-gray-700 mb-3 transition-colors duration-300">卡片标题样式</h3>
+                                            <div class="flex gap-4">
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="title-style" value="bold" class="sr-only peer" checked>
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">粗体</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="title-style" value="normal" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">常规</span>
+                                                </label>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="radio" name="title-style" value="italic" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    <span class="ml-3 text-gray-700 transition-colors duration-300">斜体</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <h3 class="font-medium text-gray-700 mb-3 transition-colors duration-300">显示卡片描述</h3>
+                                            <label class="inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="show-descriptions" class="sr-only peer" checked>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                <span class="ml-3 text-gray-700 transition-colors duration-300">在卡片中显示描述文字</span>
+                                            </label>
+                                        </div>
+
+                                        <div>
+                                            <h3 class="font-medium text-gray-700 mb-3 transition-colors duration-300">卡片排序方式</h3>
+                                            <select id="sort-order" class="px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors duration-300">
+                                                <option value="name-asc">按名称（升序）</option>
+                                                <option value="name-desc">按名称（降序）</option>
+                                                <option value="date-asc">按添加时间（升序）</option>
+                                                <option value="date-desc" selected>按添加时间（降序）</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- 重置按钮 -->
+                                        <div class="pt-4">
+                                            <button id="reset-appearance-btn" class="px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+                                                <i class="fa fa-refresh mr-2"></i>重置为默认设置
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 右侧预览区域 -->
+                                <div class="w-full lg:w-1/2">
+                                    <h2 class="text-xl font-bold text-gray-800 mb-6 transition-colors duration-300">实时预览</h2>
+                                    
+                                    <!-- 预览容器 -->
+                                    <div class="border border-gray-200 rounded-xl overflow-hidden h-[calc(100%-40px)] flex flex-col transition-colors duration-300" id="preview-container">
+                                        <!-- 预览导航栏 -->
+                                        <div class="bg-white shadow-md py-3 transition-colors duration-300" id="preview-navbar">
+                                            <div class="container mx-auto px-4">
+                                                <div class="flex items-center">
+                                                    <h3 class="text-lg font-bold text-dark transition-colors duration-300">预览</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 预览内容区 -->
+                                        <div class="flex-1 overflow-y-auto p-4 bg-gray-50 transition-colors duration-300 custom-scrollbar" id="preview-content">
+                                            <div class="text-center mb-6">
+                                                <h4 class="text-lg font-bold text-dark mb-2 transition-colors duration-300">页面预览</h4>
+                                                <p class="text-sm text-gray-600 transition-colors duration-300">您的设置将实时反映在这里</p>
+                                            </div>
+                                            
+                                            <!-- 预览卡片容器 -->
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6" id="preview-cards-container">
+                                                <!-- 预览卡片1 -->
+                                                <div class="preview-card bg-white rounded-xl shadow-md overflow-hidden card-hover" id="preview-card-1">
+                                                    <div class="p-6">
+                                                        <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4" id="preview-icon-container-1">
+                                                            <i class="fa fa-file-text-o text-xl" id="preview-icon-1"></i>
+                                                        </div>
+                                                        <h3 class="text-xl font-bold text-dark mb-2 transition-colors duration-300">示例页面1</h3>
+                                                        <p class="text-gray-600 text-sm mb-4 transition-colors duration-300">这是一个示例页面的描述</p>
+                                                        <button class="w-full text-center py-2 bg-primary/10 text-primary font-medium rounded-lg hover:bg-primary/20 transition-colors">
+                                                            加载 <i class="fa fa-arrow-right ml-1"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- 预览卡片2 -->
+                                                <div class="preview-card bg-white rounded-xl shadow-md overflow-hidden card-hover" id="preview-card-2">
+                                                    <div class="p-6">
+                                                        <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4" id="preview-icon-container-2">
+                                                            <i class="fa fa-bar-chart text-xl" id="preview-icon-2"></i>
+                                                        </div>
+                                                        <h3 class="text-xl font-bold text-dark mb-2 transition-colors duration-300">示例页面2</h3>
+                                                        <p class="text-gray-600 text-sm mb-4 transition-colors duration-300">这是另一个示例页面的描述</p>
+                                                        <button class="w-full text-center py-2 bg-primary/10 text-primary font-medium rounded-lg hover:bg-primary/20 transition-colors">
+                                                            加载 <i class="fa fa-arrow-right ml-1"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 同步设置 -->
+                        <div class="settings-tab hidden" id="sync-tab">
+                            <h2 class="text-xl font-bold text-gray-800 mb-6 transition-colors duration-300">同步设置</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="setting-item">
+                                    <div>
+                                        <h3 class="font-medium text-gray-800 transition-colors duration-300">自动同步</h3>
+                                        <p class="text-sm text-gray-500 transition-colors duration-300">定期自动同步数据</p>
+                                    </div>
+                                    <label class="inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="auto-sync" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                    </label>
+                                </div>
+
+                                <div class="setting-item">
+                                    <div>
+                                        <h3 class="font-medium text-gray-800 transition-colors duration-300">同步频率</h3>
+                                        <p class="text-sm text-gray-500 transition-colors duration-300">设置自动同步的时间间隔</p>
+                                    </div>
+                                    <select id="sync-interval" class="px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors duration-300">
+                                        <option value="5">5分钟</option>
+                                        <option value="15">15分钟</option>
+                                        <option value="30" selected>30分钟</option>
+                                        <option value="60">1小时</option>
+                                        <option value="1440">每天</option>
+                                    </select>
+                                </div>
+
+                                <div class="setting-item">
+                                    <div>
+                                        <h3 class="font-medium text-gray-800 transition-colors duration-300">同步时通知</h3>
+                                        <p class="text-sm text-gray-500 transition-colors duration-300">同步完成后显示通知</p>
+                                    </div>
+                                    <label class="inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="sync-notifications" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                    </label>
+                                </div>
+
+                                <div class="pt-4 border-t border-gray-200 transition-colors duration-300">
+                                    <button id="manual-sync-btn" class="px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors">
+                                        <i class="fa fa-refresh mr-2"></i>立即同步
+                                    </button>
+                                    <p class="text-sm text-gray-500 mt-2 transition-colors duration-300">上次同步: <span id="last-sync-time">从未同步</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 数据管理 -->
+                        <div class="settings-tab hidden" id="data-tab">
+                            <h2 class="text-xl font-bold text-gray-800 mb-6 transition-colors duration-300">数据管理</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="bg-gray-50 p-4 rounded-lg transition-colors duration-300">
+                                    <h3 class="font-medium text-gray-700 mb-3 transition-colors duration-300">导出数据</h3>
+                                    <p class="text-sm text-gray-500 mb-4 transition-colors duration-300">将所有页面数据导出为JSON文件备份</p>
+                                    <button id="export-in-settings-btn" class="px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+                                        <i class="fa fa-download mr-2"></i>导出数据
+                                    </button>
+                                </div>
+
+                                <div class="bg-gray-50 p-4 rounded-lg transition-colors duration-300">
+                                    <h3 class="font-medium text-gray-700 mb-3 transition-colors duration-300">导入数据</h3>
+                                    <p class="text-sm text-gray-500 mb-4 transition-colors duration-300">从JSON文件导入页面数据</p>
+                                    <label for="import-in-settings-btn" class="inline-block px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors cursor-pointer">
+                                        <i class="fa fa-upload mr-2"></i>选择文件
+                                        <input id="import-in-settings-btn" type="file" accept=".json" class="hidden">
+                                    </label>
+                                </div>
+
+                                <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-100 transition-colors duration-300">
+                                    <h3 class="font-medium text-yellow-800 mb-3 transition-colors duration-300">清除数据</h3>
+                                    <p class="text-sm text-yellow-700 mb-4 transition-colors duration-300">删除所有本地存储的页面数据，此操作不可恢复</p>
+                                    <button id="clear-data-btn" class="px-4 py-2 bg-yellow-100 text-yellow-800 font-medium rounded-lg hover:bg-yellow-200 transition-colors">
+                                        <i class="fa fa-trash mr-2"></i>清除所有数据
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 关于 -->
+                        <div class="settings-tab hidden" id="about-tab">
+                            <h2 class="text-xl font-bold text-gray-800 mb-6 transition-colors duration-300">关于</h2>
+                            
+                            <div class="space-y-6">
+                                <div class="text-center">
+                                    <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fa fa-th-large text-primary text-3xl"></i>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-gray-800 mb-1 transition-colors duration-300">页面汇总导航</h3>
+                                    <p class="text-gray-500 transition-colors duration-300">版本 1.0.0</p>
+                                </div>
+
+                                <div class="bg-gray-50 p-4 rounded-lg transition-colors duration-300">
+                                    <h4 class="font-medium text-gray-800 mb-2 transition-colors duration-300">关于应用</h4>
+                                    <p class="text-sm text-gray-600 transition-colors duration-300">
+                                        页面汇总导航是一个帮助您快速访问和管理各类页面的工具，
+                                        支持自定义外观、数据同步和数据管理等功能。
+                                    </p>
+                                </div>
+
+                                <div class="bg-gray-50 p-4 rounded-lg transition-colors duration-300">
+                                    <h4 class="font-medium text-gray-800 mb-2 transition-colors duration-300">联系与反馈</h4>
+                                    <p class="text-sm text-gray-600 transition-colors duration-300 mb-3">如有任何问题或建议，请联系我们</p>
+                                    <button class="text-primary hover:underline transition-colors">
+                                        <i class="fa fa-envelope mr-1"></i> 发送反馈
+                                    </button>
+                                </div>
+
+                                <div class="pt-4 border-t border-gray-200 transition-colors duration-300">
+                                    <button id="check-update-btn" class="px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+                                        <i class="fa fa-refresh mr-2"></i>检查更新
+                                    </button>
+                                    <p class="text-sm text-gray-500 mt-2 transition-colors duration-300">当前已是最新版本</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- 添加新页面按钮 -->
-    <div class="fixed bottom-6 right-6">
-        <button id="add-page-btn" class="w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 transition-all transform hover:scale-110">
-            <i class="fa fa-plus text-xl"></i>
-        </button>
-    </div>
-
-    <!-- 页脚 -->
-    <footer class="bg-dark text-gray-400 py-4 mt-auto">
-        <div class="container mx-auto px-4 text-center text-sm">
-            <p>&copy; 2023 页面汇总导航 | 支持跨设备数据同步</p>
-        </div>
-    </footer>
-
-    <!-- 添加/编辑页面模态框 -->
-    <div id="page-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl fade-in">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-dark" id="modal-title">添加新页面</h3>
-                <button id="close-modal" class="text-gray-500 hover:text-gray-700">
-                    <i class="fa fa-times text-xl"></i>
+    <!-- 同步冲突模态框 -->
+    <div id="sync-conflict-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 transition-colors duration-300">
+            <div class="p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-2 transition-colors duration-300">同步冲突</h3>
+                <p class="text-gray-600 mb-6 transition-colors duration-300">检测到本地数据与云端数据存在差异，请选择要保留的数据版本。</p>
+                
+                <div class="space-y-4">
+                    <div class="p-4 bg-gray-50 rounded-lg transition-colors duration-300">
+                        <h4 class="font-medium text-gray-800 mb-1 transition-colors duration-300">本地数据</h4>
+                        <p class="text-sm text-gray-500 transition-colors duration-300">最后修改: 今天 14:30</p>
+                    </div>
+                    
+                    <div class="p-4 bg-gray-50 rounded-lg transition-colors duration-300">
+                        <h4 class="font-medium text-gray-800 mb-1 transition-colors duration-300">云端数据</h4>
+                        <p class="text-sm text-gray-500 transition-colors duration-300">最后修改: 今天 15:45</p>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button id="keep-local-btn" class="flex-1 px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+                        保留本地数据
+                    </button>
+                    <button id="restore-cloud-btn" class="flex-1 px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors">
+                        使用云端数据
+                    </button>
+                </div>
+            </div>
+            <div class="px-6 pb-6">
+                <button id="close-conflict-modal" class="w-full px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                    稍后处理
                 </button>
             </div>
-            <form id="page-form" class="space-y-4">
-                <input type="hidden" id="edit-index" value="-1">
-                <div>
-                    <label for="page-name" class="block text-gray-700 font-medium mb-2">页面名称</label>
-                    <input type="text" id="page-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="例如：项目介绍" required>
-                </div>
-                <div>
-                    <label for="page-url" class="block text-gray-700 font-medium mb-2">页面URL</label>
-                    <input type="text" id="page-url" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="例如：project.html" required>
-                </div>
-                <div>
-                    <label for="page-desc" class="block text-gray-700 font-medium mb-2">页面描述（可选）</label>
-                    <textarea id="page-desc" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="简单描述页面内容"></textarea>
-                </div>
-                <div>
-                    <label for="page-icon" class="block text-gray-700 font-medium mb-2">选择图标</label>
-                    <div class="grid grid-cols-6 gap-2">
-                        <button type="button" class="icon-option p-3 border border-gray-200 rounded-lg hover:border-primary hover:bg-primary/5" data-icon="fa-file-text-o">
-                            <i class="fa fa-file-text-o text-xl"></i>
-                        </button>
-                        <button type="button" class="icon-option p-3 border border-gray-200 rounded-lg hover:border-primary hover:bg-primary/5" data-icon="fa-image">
-                            <i class="fa fa-image text-xl"></i>
-                        </button>
-                        <button type="button" class="icon-option p-3 border border-gray-200 rounded-lg hover:border-primary hover:bg-primary/5" data-icon="fa-bar-chart">
-                            <i class="fa fa-bar-chart text-xl"></i>
-                        </button>
-                        <button type="button" class="icon-option p-3 border border-gray-200 rounded-lg hover:border-primary hover:bg-primary/5" data-icon="fa-list">
-                            <i class="fa fa-list text-xl"></i>
-                        </button>
-                        <button type="button" class="icon-option p-3 border border-gray-200 rounded-lg hover:border-primary hover:bg-primary/5" data-icon="fa-link">
-                            <i class="fa fa-link text-xl"></i>
-                        </button>
-                        <button type="button" class="icon-option p-3 border border-gray-200 rounded-lg hover:border-primary hover:bg-primary/5" data-icon="fa-question-circle">
-                            <i class="fa fa-question-circle text-xl"></i>
-                        </button>
-                    </div>
-                    <input type="hidden" id="page-icon" value="fa-file-text-o">
-                </div>
-                <button type="submit" class="w-full py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors" id="modal-submit-btn">
-                    添加页面
-                </button>
-            </form>
         </div>
     </div>
 
-    <!-- 提示消息 -->
-    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-dark text-white px-4 py-3 rounded-lg shadow-lg z-50 hidden opacity-0 transition-opacity duration-300">
+    <!-- 通知提示框 -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-dark text-white px-4 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-2">
+        <i id="toast-icon" class="fa fa-info-circle"></i>
         <span id="toast-message"></span>
     </div>
 
-    <script>
-        // 页面数据 - 初始页面列表
-        let pages = [
-            {
-                name: "首页",
-                url: "index.html",
-                description: "网站首页，汇总所有页面的导航",
-                icon: "fa-home",
-                color: "#3B82F6" // primary
-            },
-            {
-                name: "项目文档",
-                url: "docs.html",
-                description: "项目相关文档和说明",
-                icon: "fa-file-text-o",
-                color: "#10B981" // secondary
-            },
-            {
-                name: "图片资源",
-                url: "images.html",
-                description: "项目所需的图片资源库",
-                icon: "fa-image",
-                color: "#8B5CF6" // accent
-            },
-            {
-                name: "数据报表",
-                url: "data.html",
-                description: "项目相关的数据和报表",
-                icon: "fa-bar-chart",
-                color: "#F59E0B" // amber
-            },
-            {
-                name: "任务清单",
-                url: "tasks.html",
-                description: "待完成和已完成的任务列表",
-                icon: "fa-list",
-                color: "#EF4444" // red
-            },
-            {
-                name: "外部链接",
-                url: "links.html",
-                description: "相关的外部资源链接集合",
-                icon: "fa-link",
-                color: "#06B6D4" // cyan
-            }
-        ];
-
-        // 导航历史记录
-        let navigationHistory = [];
-        let historyIndex = -1;
-        let isNavigating = false;
-
-        // DOM元素
-        const pagesContainer = document.getElementById('pages-container');
-        const addPageBtn = document.getElementById('add-page-btn');
-        const pageModal = document.getElementById('page-modal');
-        const closeModalBtn = document.getElementById('close-modal');
-        const pageForm = document.getElementById('page-form');
-        const iconOptions = document.querySelectorAll('.icon-option');
-        const pageIconInput = document.getElementById('page-icon');
-        const refreshBtn = document.getElementById('refresh-btn');
-        const modalTitle = document.getElementById('modal-title');
-        const modalSubmitBtn = document.getElementById('modal-submit-btn');
-        const editIndexInput = document.getElementById('edit-index');
-        const backBtn = document.getElementById('back-btn');
-        const forwardBtn = document.getElementById('forward-btn');
-        const homeBtn = document.getElementById('home-btn');
-        const cardsView = document.getElementById('cards-view');
-        const iframeView = document.getElementById('iframe-view');
-        const contentIframe = document.getElementById('content-iframe');
-        const currentPageTitle = document.getElementById('current-page-title');
-        const closeIframeBtn = document.getElementById('close-iframe');
-        const exportBtn = document.getElementById('export-btn');
-        const importBtn = document.getElementById('import-btn');
-        const toast = document.getElementById('toast');
-        const toastMessage = document.getElementById('toast-message');
-
-        // 渲染页面卡片
-        function renderPageCards() {
-            pagesContainer.innerHTML = '';
-            
-            pages.forEach((page, index) => {
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-xl shadow-md overflow-hidden card-hover fade-in relative';
-                card.style.animationDelay = `${index * 100}ms`;
-                
-                card.innerHTML = `
-                    <div class="p-6">
-                        <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style="background-color: ${page.color}20;">
-                            <i class="fa ${page.icon} text-xl" style="color: ${page.color};"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-dark mb-2">${page.name}</h3>
-                        <p class="text-gray-600 text-sm mb-4">${page.description}</p>
-                        <div class="flex gap-2">
-                            <button class="load-page-btn flex-1 text-center py-2 bg-primary/10 text-primary font-medium rounded-lg hover:bg-primary/20 transition-colors" data-index="${index}">
-                                加载 <i class="fa fa-arrow-right ml-1"></i>
-                            </button>
-                            <button class="edit-btn px-3 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors" data-index="${index}">
-                                <i class="fa fa-pencil"></i>
-                            </button>
-                            <button class="delete-btn px-3 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 hover:text-red-500 transition-colors" data-index="${index}">
-                                    <i class="fa fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                // 加载页面功能
-                card.querySelector('.load-page-btn').addEventListener('click', () => {
-                    loadPage(index);
-                });
-                
-                // 编辑功能
-                card.querySelector('.edit-btn').addEventListener('click', () => {
-                    openEditModal(index);
-                });
-                
-                // 删除功能
-                card.querySelector('.delete-btn').addEventListener('click', () => {
-                    if (confirm(`确定要删除"${pages[index].name}"吗？`)) {
-                        pages.splice(index, 1);
-                        renderPageCards();
-                        savePagesToLocalStorage();
-                        showToast('页面已删除');
-                    }
-                });
-                
-                pagesContainer.appendChild(card);
-            });
-        }
-
-        // 加载指定页面到iframe
-        function loadPage(index) {
-            const page = pages[index];
-            if (!page) return;
-            
-            // 显示iframe视图，隐藏卡片视图
-            cardsView.classList.add('hidden');
-            iframeView.classList.remove('hidden');
-            
-            // 更新当前页面标题
-            currentPageTitle.textContent = page.name;
-            
-            // 加载页面内容
-            contentIframe.src = page.url;
-            
-            // 添加到导航历史
-            addToHistory(page);
-            
-            // 更新导航按钮状态
-            updateNavButtons();
-        }
-
-        // 返回卡片视图
-        function showCardsView() {
-            iframeView.classList.add('hidden');
-            cardsView.classList.remove('hidden');
-        }
-
-        // 添加到导航历史
-        function addToHistory(page) {
-            if (isNavigating) {
-                isNavigating = false;
-                return;
-            }
-            
-            // 如果不是在历史记录末尾，清除后面的记录
-            if (historyIndex < navigationHistory.length - 1) {
-                navigationHistory = navigationHistory.slice(0, historyIndex + 1);
-            }
-            
-            // 添加新记录
-            navigationHistory.push(page);
-            historyIndex = navigationHistory.length - 1;
-        }
-
-        // 更新导航按钮状态
-        function updateNavButtons() {
-            backBtn.disabled = historyIndex <= 0;
-            forwardBtn.disabled = historyIndex >= navigationHistory.length - 1;
-        }
-
-        // 后退导航
-        function navigateBack() {
-            if (historyIndex > 0) {
-                isNavigating = true;
-                historyIndex--;
-                const page = navigationHistory[historyIndex];
-                contentIframe.src = page.url;
-                currentPageTitle.textContent = page.name;
-                updateNavButtons();
-            }
-        }
-
-        // 前进导航
-        function navigateForward() {
-            if (historyIndex < navigationHistory.length - 1) {
-                isNavigating = true;
-                historyIndex++;
-                const page = navigationHistory[historyIndex];
-                contentIframe.src = page.url;
-                currentPageTitle.textContent = page.name;
-                updateNavButtons();
-            }
-        }
-
-        // 刷新当前页面
-        function refreshCurrentPage() {
-            if (iframeView.classList.contains('hidden')) {
-                // 如果在卡片视图，重新渲染卡片
-                renderPageCards();
-                showToast('已刷新');
-            } else {
-                // 如果在iframe视图，刷新iframe
-                contentIframe.src = contentIframe.src;
-                showToast('页面已刷新');
-            }
-        }
-
-        // 打开添加模态框
-        function openAddModal() {
-            modalTitle.textContent = "添加新页面";
-            modalSubmitBtn.textContent = "添加页面";
-            editIndexInput.value = "-1";
-            pageForm.reset();
-            pageIconInput.value = "fa-file-text-o";
-            
-            // 重置图标选择
-            resetIconSelection();
-            
-            pageModal.classList.remove('hidden');
-        }
-
-        // 打开编辑模态框
-        function openEditModal(index) {
-            const page = pages[index];
-            modalTitle.textContent = "编辑页面";
-            modalSubmitBtn.textContent = "更新页面";
-            editIndexInput.value = index;
-            
-            // 填充表单数据
-            document.getElementById('page-name').value = page.name;
-            document.getElementById('page-url').value = page.url;
-            document.getElementById('page-desc').value = page.description;
-            pageIconInput.value = page.icon;
-            
-            // 重置并设置图标选择
-            resetIconSelection();
-            iconOptions.forEach(option => {
-                if (option.getAttribute('data-icon') === page.icon) {
-                    option.classList.add('border-primary', 'bg-primary/5');
-                }
-            });
-            
-            pageModal.classList.remove('hidden');
-        }
-
-        // 重置图标选择状态
-        function resetIconSelection() {
-            iconOptions.forEach(option => {
-                option.classList.remove('border-primary', 'bg-primary/5');
-            });
-            iconOptions[0].classList.add('border-primary', 'bg-primary/5');
-        }
-
-        // 关闭模态框
-        function closeModal() {
-            pageModal.classList.add('hidden');
-        }
-
-        // 保存页面数据到本地存储
-        function savePagesToLocalStorage() {
-            localStorage.setItem('sitePages', JSON.stringify(pages));
-        }
-
-        // 从本地存储加载页面数据
-        function loadPagesFromLocalStorage() {
-            const savedPages = localStorage.getItem('sitePages');
-            if (savedPages) {
-                pages = JSON.parse(savedPages);
-                return true;
-            }
-            return false;
-        }
-
-        // 导出页面数据
-        function exportPageData() {
-            const dataStr = JSON.stringify(pages, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `page-collection-${new Date().toISOString().slice(0,10)}.json`;
-            document.body.appendChild(a);
-            a.click();
-            
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 0);
-            
-            showToast('页面数据已导出');
-        }
-
-        // 导入页面数据
-        function importPageData(file) {
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                try {
-                    const importedPages = JSON.parse(e.target.result);
-                    
-                    // 验证导入的数据格式
-                    if (Array.isArray(importedPages) && importedPages.every(page => 
-                        page.name && page.url && page.icon
-                    )) {
-                        pages = importedPages;
-                        renderPageCards();
-                        savePagesToLocalStorage();
-                        showToast('页面数据已导入');
-                    } else {
-                        showToast('导入失败：无效的数据格式', true);
-                    }
-                } catch (error) {
-                    showToast('导入失败：文件格式错误', true);
-                    console.error('Import error:', error);
-                }
-            };
-            
-            reader.readAsText(file);
-        }
-
-        // 显示提示消息
-        function showToast(message, isError = false) {
-            toastMessage.textContent = message;
-            toast.classList.remove('hidden', 'opacity-0');
-            
-            if (isError) {
-                toast.classList.add('bg-red-600');
-                toast.classList.remove('bg-dark');
-            } else {
-                toast.classList.add('bg-dark');
-                toast.classList.remove('bg-red-600');
-            }
-            
-            setTimeout(() => {
-                toast.classList.add('opacity-100');
-            }, 10);
-            
-            setTimeout(() => {
-                toast.classList.remove('opacity-100');
-                setTimeout(() => {
-                    toast.classList.add('hidden');
-                }, 300);
-            }, 3000);
-        }
-
-        // 随机生成颜色
-        function getRandomColor() {
-            const colors = [
-                "#3B82F6", "#10B981", "#8B5CF6", "#F59E0B", 
-                "#EF4444", "#06B6D4", "#EC4899", "#6B7280"
-            ];
-            return colors[Math.floor(Math.random() * colors.length)];
-        }
-
-        // 事件监听
-        // 页面加载时渲染卡片
-        document.addEventListener('DOMContentLoaded', () => {
-            // 尝试从本地存储加载页面数据
-            const loaded = loadPagesFromLocalStorage();
-            // 如果没有本地存储数据，则使用初始数据并保存
-            if (!loaded) {
-                savePagesToLocalStorage();
-            }
-            renderPageCards();
-        });
-
-        // 添加页面按钮点击
-        addPageBtn.addEventListener('click', openAddModal);
-
-        // 关闭模态框按钮点击
-        closeModalBtn.addEventListener('click', closeModal);
-
-        // 点击模态框外部关闭
-        pageModal.addEventListener('click', (e) => {
-            if (e.target === pageModal) {
-                closeModal();
-            }
-        });
-
-        // 图标选择
-        iconOptions.forEach(option => {
-            option.addEventListener('click', (e) => {
-                e.preventDefault();
-                // 移除所有选中状态
-                iconOptions.forEach(opt => opt.classList.remove('border-primary', 'bg-primary/5'));
-                // 添加当前选中状态
-                option.classList.add('border-primary', 'bg-primary/5');
-                // 设置隐藏字段值
-                pageIconInput.value = option.getAttribute('data-icon');
-            });
-        });
-
-        // 表单提交 - 添加或编辑页面
-        pageForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const editIndex = parseInt(editIndexInput.value);
-            
-            const pageData = {
-                name: document.getElementById('page-name').value,
-                url: document.getElementById('page-url').value,
-                description: document.getElementById('page-desc').value || '无描述',
-                icon: pageIconInput.value,
-                color: editIndex === -1 ? getRandomColor() : pages[editIndex].color // 编辑时保持原有颜色
-            };
-            
-            if (editIndex === -1) {
-                // 添加新页面
-                pages.push(pageData);
-                showToast('新页面已添加');
-            } else {
-                // 编辑现有页面
-                pages[editIndex] = pageData;
-                showToast('页面已更新');
-            }
-            
-            // 重新渲染
-            renderPageCards();
-            // 保存到本地存储
-            savePagesToLocalStorage();
-            // 关闭模态框
-            closeModal();
-        });
-
-        // 导航按钮事件
-        backBtn.addEventListener('click', navigateBack);
-        forwardBtn.addEventListener('click', navigateForward);
-        refreshBtn.addEventListener('click', refreshCurrentPage);
-        homeBtn.addEventListener('click', showCardsView);
-        closeIframeBtn.addEventListener('click', showCardsView);
-
-        // 导出数据按钮
-        exportBtn.addEventListener('click', exportPageData);
-
-        // 导入数据按钮
-        importBtn.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                importPageData(file);
-                // 重置输入，允许重复选择同一个文件
-                importBtn.value = '';
-            }
-        });
-
-        // 监听iframe加载完成事件
-        contentIframe.addEventListener('load', () => {
-            // 如果是历史导航，不需要额外处理
-            if (isNavigating) {
-                isNavigating = false;
-                return;
-            }
-            
-            // 对于新加载的页面，更新历史记录
-            try {
-                const currentUrl = new URL(contentIframe.src).pathname.split('/').pop();
-                const currentPage = pages.find(page => page.url === currentUrl);
-                if (currentPage) {
-                    addToHistory(currentPage);
-                    updateNavButtons();
-                }
-            } catch (error) {
-                console.error('Error processing iframe load:', error);
-            }
-        });
-    </script>
+    <!-- 模块化脚本 -->
+    <script src="app-settings.js"></script>
+    <script src="page-navigation.js"></script>
+    <script src="ui-helpers.js"></script>
+    <script src="sync-manager.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
