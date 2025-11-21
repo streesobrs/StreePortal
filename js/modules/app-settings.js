@@ -11,9 +11,9 @@ const AppSettings = (() => {
         navbarStyle: 'standard',
         enableAnimations: true,
         iconSize: 'medium',
-        autoSync: true,
+        autoSync: false, // 同步功能已禁用
         syncInterval: 30,
-        syncNotifications: true
+        syncNotifications: false
     };
 
     // 当前设置
@@ -94,14 +94,26 @@ const AppSettings = (() => {
         // 图标大小
         document.querySelector(`input[name="icon-size"][value="${settings.iconSize}"]`).checked = true;
         
-        // 自动同步
-        autoSyncToggle.checked = settings.autoSync;
+        // 自动同步（已禁用）
+        if (autoSyncToggle) {
+            autoSyncToggle.checked = false;
+            autoSyncToggle.disabled = true;
+            autoSyncToggle.title = '云服务同步功能尚未实现';
+        }
         
-        // 同步间隔
-        syncIntervalSelect.value = settings.syncInterval;
+        // 同步间隔（已禁用）
+        if (syncIntervalSelect) {
+            syncIntervalSelect.value = 30;
+            syncIntervalSelect.disabled = true;
+            syncIntervalSelect.title = '云服务同步功能尚未实现';
+        }
         
-        // 同步通知
-        syncNotificationsToggle.checked = settings.syncNotifications;
+        // 同步通知（已禁用）
+        if (syncNotificationsToggle) {
+            syncNotificationsToggle.checked = false;
+            syncNotificationsToggle.disabled = true;
+            syncNotificationsToggle.title = '云服务同步功能尚未实现';
+        }
     }
 
     // 应用设置到界面
@@ -452,40 +464,40 @@ const AppSettings = (() => {
             });
         });
 
-        // 自动同步设置
-        autoSyncToggle.addEventListener('change', (e) => {
-            settings.autoSync = e.target.checked;
-            saveToLocalStorage();
-            SyncManager.setupAutoSync();
-            UIHelpers.showToast(`自动同步已${e.target.checked ? '启用' : '禁用'}`);
-        });
+        // 自动同步设置（已禁用）
+        if (autoSyncToggle) {
+            autoSyncToggle.addEventListener('change', (e) => {
+                // 显示未实现提示
+                UIHelpers.showToast('云服务同步功能尚未实现', 'info');
+                // 确保复选框保持未选中状态
+                e.target.checked = false;
+            });
+        }
 
-        // 同步间隔设置
-        syncIntervalSelect.addEventListener('change', (e) => {
-            settings.syncInterval = parseInt(e.target.value);
-            saveToLocalStorage();
-            SyncManager.setupAutoSync();
-            UIHelpers.showToast(`同步间隔已设置为${e.target.options[e.target.selectedIndex].text}`);
-        });
+        // 同步间隔设置（已禁用）
+        if (syncIntervalSelect) {
+            syncIntervalSelect.addEventListener('change', () => {
+                // 显示未实现提示
+                UIHelpers.showToast('云服务同步功能尚未实现', 'info');
+                // 重置为默认值
+                syncIntervalSelect.value = 30;
+            });
+        }
 
-        // 同步通知设置
-        syncNotificationsToggle.addEventListener('change', (e) => {
-            settings.syncNotifications = e.target.checked;
-            saveToLocalStorage();
-            UIHelpers.showToast(`同步通知已${e.target.checked ? '启用' : '禁用'}`);
-        });
+        // 同步通知设置（已禁用）
+        if (syncNotificationsToggle) {
+            syncNotificationsToggle.addEventListener('change', (e) => {
+                // 显示未实现提示
+                UIHelpers.showToast('云服务同步功能尚未实现', 'info');
+                // 确保复选框保持未选中状态
+                e.target.checked = false;
+            });
+        }
 
         // 重置外观设置
         resetAppearanceBtn.addEventListener('click', () => {
-            // 保留同步相关设置
-            const syncSettings = {
-                autoSync: settings.autoSync,
-                syncInterval: settings.syncInterval,
-                syncNotifications: settings.syncNotifications
-            };
-            
-            // 恢复默认设置
-            Object.assign(settings, defaultSettings, syncSettings);
+            // 同步功能已禁用，直接恢复默认设置
+            Object.assign(settings, defaultSettings);
             saveToLocalStorage();
             updateUIFromSettings();
             applySettings();
