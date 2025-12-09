@@ -23,6 +23,40 @@ const PageNavigation = (() => {
     // 初始化
     function init() {
         setupEventListeners();
+
+        // 路由处理：检查当前URL是否为子页面
+        handleInitialRoute();
+    }
+
+    // 处理初始路由
+    function handleInitialRoute() {
+        const currentPath = window.location.pathname;
+
+        // 检查URL查询参数中是否有page参数（来自子页面重定向）
+        const urlParams = new URLSearchParams(window.location.search);
+        const pageParam = urlParams.get('page');
+
+        // 优先处理查询参数中的页面路径
+        if (pageParam && pageParam.includes('/pages/') && pageParam.endsWith('.html')) {
+            const pageUrl = pageParam;
+            const filename = pageUrl.split('/').pop().replace('.html', '');
+            const pageTitle = decodeURIComponent(filename);
+
+            console.log('从URL参数检测到子页面请求:', pageUrl);
+            loadPage(pageUrl, pageTitle);
+
+            // 更新URL，移除查询参数，保持URL干净
+            window.history.replaceState({}, pageTitle, pageUrl);
+        }
+        // 如果直接访问的是子页面URL（在应用框架的上下文中）
+        else if (currentPath !== '/' && currentPath.includes('/pages/') && currentPath.endsWith('.html')) {
+            const pageUrl = currentPath;
+            const filename = pageUrl.split('/').pop().replace('.html', '');
+            const pageTitle = decodeURIComponent(filename);
+
+            console.log('检测到直接访问子页面URL，将在框架内加载:', pageUrl);
+            loadPage(pageUrl, pageTitle);
+        }
     }
 
     // 设置事件监听器
@@ -64,7 +98,7 @@ const PageNavigation = (() => {
     function loadPage(url, title) {
         contentIframe.src = url;
         currentPageTitle.textContent = title;
-        
+
         // 更新历史记录
         if (historyIndex < historyStack.length - 1) {
             historyStack.splice(historyIndex + 1);
@@ -72,7 +106,12 @@ const PageNavigation = (() => {
         historyStack.push({ url, title });
         historyIndex = historyStack.length - 1;
         updateHistoryButtons();
-        
+
+        // 更新浏览器URL而不刷新页面
+        // 确保URL是相对路径格式
+        const pagePath = url.startsWith('/') ? url : `/${url}`;
+        window.history.pushState({ page: url, title: title }, title, pagePath);
+
         // 显示iframe视图
         cardsView.classList.add('hidden');
         settingsView.classList.add('hidden');
@@ -84,6 +123,9 @@ const PageNavigation = (() => {
         iframeView.classList.add('hidden');
         settingsView.classList.add('hidden');
         cardsView.classList.remove('hidden');
+
+        // 更新浏览器URL为根路径
+        window.history.pushState({}, 'StreePortal 主页', '/');
     }
 
     // 显示设置视图
@@ -103,7 +145,7 @@ const PageNavigation = (() => {
                 item.classList.remove('active');
             }
         });
-        
+
         // 更新内容区域显示
         settingsTabs.forEach(tab => {
             if (tab.id === `${tabId}-tab`) {
@@ -124,6 +166,10 @@ const PageNavigation = (() => {
             contentIframe.src = url;
             currentPageTitle.textContent = title;
             updateHistoryButtons();
+
+            // 更新浏览器URL
+            const pagePath = url.startsWith('/') ? url : `/${url}`;
+            window.history.pushState({ page: url, title: title }, title, pagePath);
         }
     }
 
@@ -134,12 +180,29 @@ const PageNavigation = (() => {
             contentIframe.src = url;
             currentPageTitle.textContent = title;
             updateHistoryButtons();
+
+            // 更新浏览器URL
+            const pagePath = url.startsWith('/') ? url : `/${url}`;
+            window.history.pushState({ page: url, title: title }, title, pagePath);
         }
     }
 
     function refreshPage() {
         if (!iframeView.classList.contains('hidden')) {
-            contentIframe.src = contentIframe.src;
+            // 添加时间戳参数以确保清除缓存刷新
+            const currentUrl = contentIframe.src.split('?')[0];
+            const timestamp = new Date().getTime();
+            contentIframe.src = `${currentUrl}?t=${timestamp}`;
+
+            // 显示刷新成功的提示
+            UIHelpers.showToast('页面已刷新并清除缓存', 'success');
+        } else {
+            // 简化主页面刷新逻辑，直接执行刷新
+            // 不依赖toast显示，确保刷新操作一定执行
+            console.log('执行整站刷新');
+            // 使用更可靠的方法刷新页面
+            const url = window.location.href.split('?')[0];
+            window.location.href = `${url}?t=${new Date().getTime()}`;
         }
     }
 
