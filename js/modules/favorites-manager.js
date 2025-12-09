@@ -9,6 +9,7 @@ const FavoritesManager = (() => {
         loadFromStorage();
         setupFavoriteButtons();
         highlightFavorites();
+        updateFavoritesList(); // 添加这行，确保页面加载时显示收藏列表
     }
 
     // 从本地存储加载收藏列表
@@ -31,21 +32,38 @@ const FavoritesManager = (() => {
         cards.forEach(card => {
             // 获取页面信息
             const pagePath = card.getAttribute('data-path') || '';
-            const pageTitle = card.querySelector('.text-lg')?.textContent || '未命名页面';
+            // 生成唯一ID，确保每个卡片都有唯一标识
+            const uniqueId = pagePath + '_' + Math.random().toString(36).substr(2, 9);
+            card.setAttribute('data-unique-id', uniqueId);
+
+            // 优先使用按钮的data-title属性，其次使用卡片中的text-lg元素，最后使用默认值
+            const loadButton = card.querySelector('.load-page-btn');
+            const pageTitle = loadButton?.getAttribute('data-title') ||
+                card.querySelector('.text-lg')?.textContent ||
+                '未命名页面';
 
             // 创建收藏按钮
             const favoriteButton = document.createElement('button');
-            favoriteButton.className = 'absolute top-3 right-3 text-gray-400 hover:text-yellow-400 transition-colors';
-            favoriteButton.innerHTML = favorites.some(fav => fav.path === pagePath)
-                ? '<i class="fas fa-star text-yellow-400"></i>'
-                : '<i class="far fa-star"></i>';
-            favoriteButton.title = favorites.some(fav => fav.path === pagePath) ? '取消收藏' : '添加收藏';
-            favoriteButton.ariaLabel = favorites.some(fav => fav.path === pagePath) ? '取消收藏' : '添加收藏';
+            favoriteButton.className = 'favorite-button absolute top-3 right-3 text-gray-400 hover:text-yellow-400 transition-colors';
+            favoriteButton.setAttribute('data-path', pagePath);
+            favoriteButton.setAttribute('data-unique-id', uniqueId);
+
+            // 查找是否已收藏
+            const isFavorite = favorites.some(fav => {
+                // 优先使用uniqueId匹配，如果没有则使用path
+                return fav.uniqueId === uniqueId || (fav.path === pagePath && !fav.uniqueId);
+            });
+
+            favoriteButton.innerHTML = isFavorite
+                ? '<span class="inline-flex items-center justify-center p-1.5 bg-yellow-100 dark:bg-yellow-900 rounded-full"><i class="fa fa-star text-xs text-yellow-400"></i></span>'
+                : '<span class="inline-flex items-center justify-center p-1.5 rounded-full"><i class="fa fa-star-o text-xs"></i></span>';
+            favoriteButton.title = isFavorite ? '取消收藏：' + pageTitle : '添加收藏：' + pageTitle;
+            favoriteButton.ariaLabel = isFavorite ? '取消收藏：' + pageTitle : '添加收藏：' + pageTitle;
 
             // 添加点击事件
             favoriteButton.addEventListener('click', (e) => {
                 e.stopPropagation(); // 阻止事件冒泡，避免触发卡片点击
-                toggleFavorite(pagePath, pageTitle);
+                toggleFavorite(pagePath, pageTitle, uniqueId);
             });
 
             // 将按钮添加到卡片中
@@ -60,26 +78,53 @@ const FavoritesManager = (() => {
 
         cards.forEach(card => {
             const pagePath = card.getAttribute('data-path') || '';
-            const isFavorite = favorites.some(fav => fav.path === pagePath);
+            const uniqueId = card.getAttribute('data-unique-id') || '';
+
+            // 优先使用uniqueId检查收藏状态，其次使用path
+            const isFavorite = favorites.some(fav => {
+                return fav.uniqueId === uniqueId || (fav.path === pagePath && !fav.uniqueId);
+            });
 
             if (isFavorite) {
                 card.classList.add('border-yellow-300', 'ring-1', 'ring-yellow-300');
+            } else {
+                // 移除高亮，如果之前添加过
+                card.classList.remove('border-yellow-300', 'ring-1', 'ring-yellow-300');
             }
         });
     }
 
     // 切换收藏状态
-    function toggleFavorite(pagePath, pageTitle) {
-        const index = favorites.findIndex(fav => fav.path === pagePath);
+    function toggleFavorite(pagePath, pageTitle, uniqueId) {
+        // 确保标题获取逻辑与setupFavoriteButtons一致
+        const cards = document.querySelectorAll('.card-hover');
+        let finalTitle = pageTitle; // 使用传入的标题作为默认值
+
+        // 查找对应的卡片，获取更准确的标题
+        for (const card of cards) {
+            if (card.getAttribute('data-unique-id') === uniqueId || card.getAttribute('data-path') === pagePath) {
+                const loadButton = card.querySelector('.load-page-btn');
+                const foundTitle = loadButton?.getAttribute('data-title') ||
+                    card.querySelector('.text-lg')?.textContent ||
+                    '未命名页面';
+                if (foundTitle !== '未命名页面') {
+                    finalTitle = foundTitle;
+                }
+                break;
+            }
+        }
+
+        // 优先使用uniqueId查找，其次使用path
+        const index = favorites.findIndex(fav => fav.uniqueId === uniqueId || (fav.path === pagePath && !fav.uniqueId));
 
         if (index > -1) {
             // 取消收藏
             favorites.splice(index, 1);
-            UIHelpers.showToast('已取消收藏：' + pageTitle, 'info');
+            UIHelpers.showToast('已取消收藏：' + finalTitle, 'info');
         } else {
-            // 添加收藏
-            favorites.push({ path: pagePath, title: pageTitle, timestamp: Date.now() });
-            UIHelpers.showToast('已添加到收藏：' + pageTitle, 'success');
+            // 添加收藏，包含uniqueId
+            favorites.push({ path: pagePath, title: finalTitle, timestamp: Date.now(), uniqueId: uniqueId });
+            UIHelpers.showToast('已添加到收藏：' + finalTitle, 'success');
         }
 
         // 保存到存储
@@ -95,23 +140,34 @@ const FavoritesManager = (() => {
 
     // 更新收藏按钮状态
     function updateFavoriteButtons() {
-        // 移除错误的closest()调用
-        document.querySelectorAll('.card-hover button .fa-star').forEach(icon => {
-            const button = icon.closest('button');
-            const card = button.closest('.card-hover');
-            const pagePath = card.getAttribute('data-path') || '';
-            const isFavorite = favorites.some(fav => fav.path === pagePath);
+        // 获取所有收藏按钮并更新其状态
+        document.querySelectorAll('.favorite-button').forEach(button => {
+            const pagePath = button.getAttribute('data-path') || '';
+            const uniqueId = button.getAttribute('data-unique-id') || '';
 
+            // 优先使用uniqueId检查收藏状态，其次使用path
+            const isFavorite = favorites.some(fav => {
+                return fav.uniqueId === uniqueId || (fav.path === pagePath && !fav.uniqueId);
+            });
+
+            // 获取对应的卡片
+            const card = button.closest('.card-hover');
+
+            // 确保标题获取逻辑一致
+            const loadButton = card?.querySelector('.load-page-btn');
+            const pageTitle = loadButton?.getAttribute('data-title') ||
+                card?.querySelector('.text-lg')?.textContent ||
+                '未命名页面';
+
+            // 替换整个按钮内容，使用与setupFavoriteButtons一致的span包装图标结构
             if (isFavorite) {
-                // 确保使用五角星图标（star）
-                icon.className = 'fas fa-star text-yellow-400';
-                button.title = '取消收藏';
-                button.ariaLabel = '取消收藏';
+                button.innerHTML = '<span class="inline-flex items-center justify-center p-1.5 bg-yellow-100 dark:bg-yellow-900 rounded-full"><i class="fa fa-star text-xs text-yellow-400"></i></span>';
+                button.title = '取消收藏：' + pageTitle;
+                button.ariaLabel = '取消收藏：' + pageTitle;
             } else {
-                // 确保使用空心五角星图标（star）
-                icon.className = 'far fa-star';
-                button.title = '添加收藏';
-                button.ariaLabel = '添加收藏';
+                button.innerHTML = '<span class="inline-flex items-center justify-center p-1.5 rounded-full"><i class="fa fa-star-o text-xs"></i></span>';
+                button.title = '添加收藏：' + pageTitle;
+                button.ariaLabel = '添加收藏：' + pageTitle;
             }
         });
     }
@@ -135,7 +191,7 @@ const FavoritesManager = (() => {
             // 创建标题
             const title = document.createElement('h2');
             title.className = 'text-xl font-bold mb-4';
-            title.innerHTML = '<i class="fas fa-star text-yellow-400 mr-2"></i>我的收藏';
+            title.innerHTML = '<i class="fa fa-star text-yellow-400 mr-2"></i>我的收藏';
             favoritesContainer.appendChild(title);
 
             // 创建收藏列表
@@ -176,14 +232,14 @@ const FavoritesManager = (() => {
                         <div class="flex items-center justify-between mb-2">
                             <h3 class="text-lg font-semibold text-gray-800 dark:text-white">${favorite.title}</h3>
                             <span class="inline-flex items-center justify-center p-1.5 bg-yellow-100 dark:bg-yellow-900 rounded-full">
-                                <i class="fas fa-star text-xs text-yellow-400"></i>
+                                <i class="fa fa-star text-xs text-yellow-400"></i>
                             </span>
                         </div>
                         <p class="text-sm text-gray-500 dark:text-gray-400 truncate">${favorite.path}</p>
                         <div class="mt-4 flex justify-between items-center">
                             <span class="text-xs text-gray-400">收藏于 ${formatDate(favorite.timestamp)}</span>
                             <button class="text-xs text-gray-400 hover:text-red-500 unpin-favorite" data-path="${favorite.path}">
-                                <i class="fas fa-times"></i> 取消收藏
+                                <i class="fa fa-times"></i> 取消收藏
                             </button>
                         </div>
                     </div>
@@ -203,7 +259,8 @@ const FavoritesManager = (() => {
                 const unpinButton = card.querySelector('.unpin-favorite');
                 unpinButton.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    toggleFavorite(favorite.path, favorite.title);
+                    // 传递favorite对象中的uniqueId（如果有）
+                    toggleFavorite(favorite.path, favorite.title, favorite.uniqueId);
                 });
 
                 favoritesList.appendChild(card);
