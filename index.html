@@ -26,6 +26,14 @@
         }
     </script>
     <style>
+        /* 基础样式 */
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
         /* 自定义工具类 */
         .card-hover {
             transition: all 300ms;
@@ -54,7 +62,7 @@
 
         .iframe-container {
             width: 100%;
-            height: calc(100vh - 64px);
+            height: 100%;
             overflow: auto;
         }
 
@@ -288,7 +296,7 @@
     <!-- 主内容区 - 全屏容器 -->
     <main class="flex-1 container mx-auto px-4 py-6 full-height-container">
         <!-- 页面内容显示区域 -->
-        <div id="content-area" class="content-wrapper">
+        <div id="content-area" class="content-wrapper h-full flex flex-col">
             <!-- 首页卡片视图 -->
             <div id="cards-view" class="py-4 flex-1">
                 <!-- 页面介绍 -->
@@ -350,12 +358,46 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- 画圈游戏卡片 -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover fade-in"
+                        style="animation-delay: 0.4s">
+                        <div class="p-6">
+                            <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                                <i class="fa fa-circle-o text-primary text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-dark mb-2 transition-colors duration-300">画圈游戏</h3>
+                            <p class="text-gray-600 text-sm mb-4 transition-colors duration-300">测试你的画圆技巧，挑战完美几何图形</p>
+                            <button
+                                class="w-full text-center py-2 bg-primary/10 text-primary font-medium rounded-lg hover:bg-primary/20 transition-colors load-page-btn"
+                                data-page="pages/画圈游戏.html" data-title="画圈游戏">
+                                加载 <i class="fa fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Never Gonna Give You Up卡片 -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover fade-in"
+                        style="animation-delay: 0.5s">
+                        <div class="p-6">
+                            <div class="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center mb-4">
+                                <i class="fa fa-music text-purple-500 text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-dark mb-2 transition-colors duration-300">音乐欣赏</h3>
+                            <p class="text-gray-600 text-sm mb-4 transition-colors duration-300">享受经典音乐，放松心情</p>
+                            <button
+                                class="w-full text-center py-2 bg-purple-100 text-purple-500 font-medium rounded-lg hover:bg-purple-200 transition-colors load-page-btn"
+                                data-page="pages/never_gonna_give_you_up.html" data-title="音乐欣赏">
+                                加载 <i class="fa fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- 页面加载iframe区域 -->
-            <div id="iframe-view" class="hidden flex-1 flex flex-col">
-                <div class="bg-white rounded-xl shadow-md overflow-hidden transition-colors duration-300 flex-1 flex flex-col"
+            <div id="iframe-view" class="hidden flex-1 flex flex-col h-full">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden transition-colors duration-300 flex-1 flex flex-col h-full"
                     id="iframe-card">
                     <div
                         class="p-3 bg-gray-50 border-b flex justify-between items-center transition-colors duration-300">
@@ -365,7 +407,7 @@
                             <i class="fa fa-times text-gray-600"></i>
                         </button>
                     </div>
-                    <div class="iframe-container flex-1">
+                    <div class="iframe-container flex-1 h-full">
                         <iframe id="content-iframe" class="w-full h-full min-h-full border-0" src=""
                             frameborder="0"></iframe>
                     </div>
@@ -482,6 +524,56 @@
                                                     用户管理</h4>
                                                 <p class="text-xs text-gray-500 transition-colors duration-300">
                                                     users.html</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button class="p-1.5 text-gray-500 hover:text-primary transition-colors"
+                                                title="编辑">
+                                                <i class="fa fa-pencil"></i>
+                                            </button>
+                                            <button class="p-1.5 text-gray-500 hover:text-red-500 transition-colors"
+                                                title="删除">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm transition-colors duration-300">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
+                                                <i class="fa fa-circle-o text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-medium text-gray-800 transition-colors duration-300">
+                                                    画圈游戏</h4>
+                                                <p class="text-xs text-gray-500 transition-colors duration-300">
+                                                    pages/画圈游戏.html</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button class="p-1.5 text-gray-500 hover:text-primary transition-colors"
+                                                title="编辑">
+                                                <i class="fa fa-pencil"></i>
+                                            </button>
+                                            <button class="p-1.5 text-gray-500 hover:text-red-500 transition-colors"
+                                                title="删除">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm transition-colors duration-300">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded bg-purple-100 flex items-center justify-center">
+                                                <i class="fa fa-music text-purple-500"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-medium text-gray-800 transition-colors duration-300">
+                                                    音乐欣赏</h4>
+                                                <p class="text-xs text-gray-500 transition-colors duration-300">
+                                                    pages/never_gonna_give_you_up.html</p>
                                             </div>
                                         </div>
                                         <div class="flex gap-2">

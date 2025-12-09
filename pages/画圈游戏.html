@@ -1,0 +1,1864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>画圆测试小游戏</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3B82F6',
+            secondary: '#10B981',
+            accent: '#8B5CF6',
+            danger: '#EF4444',
+            neutral: '#F9FAFB',
+            dark: '#1F2937',
+            light: '#F3F4F6'
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .grid-pattern {
+        background-image: linear-gradient(#e5e7eb 1px, transparent 1px),
+                          linear-gradient(to right, #e5e7eb 1px, transparent 1px);
+      }
+      .dark .grid-pattern {
+        background-image: linear-gradient(#374151 1px, transparent 1px),
+                          linear-gradient(to right, #374151 1px, transparent 1px);
+      }
+      .backdrop-blur-sm {
+        backdrop-filter: blur(4px);
+      }
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .dark .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      }
+      .pulse-ring {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+      .float {
+        animation: float 3s ease-in-out infinite;
+      }
+      @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+      }
+      .confetti {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        opacity: 0;
+      }
+      .badge-unlocked {
+        filter: none;
+        transform: scale(1);
+      }
+      .badge-locked {
+        filter: grayscale(100%) opacity(50%);
+        transform: scale(0.9);
+      }
+      .timer-pulse {
+        animation: timerPulse 1s infinite;
+      }
+      @keyframes timerPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+    }
+    
+    /* 深色模式支持 */
+    .dark body {
+      background-color: rgb(17 24 39);
+      color: rgb(243 244 246);
+    }
+    
+    .dark .bg-white {
+      background-color: rgb(31 41 55);
+    }
+    
+    .dark .bg-neutral {
+      background-color: rgb(31 41 55);
+    }
+    
+    .dark .text-dark {
+      color: rgb(243 244 246);
+    }
+    
+    .dark .text-dark\/60,
+    .dark .text-dark\/70,
+    .dark .text-dark\/80 {
+      color: rgb(209 213 219);
+    }
+  </style>
+</head>
+
+<body class="font-inter bg-white text-dark min-h-screen overflow-hidden">
+  <!-- 音效元素 -->
+  <audio id="draw-sound" preload="auto">
+    <source src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-mechanical-bling-210.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="success-sound" preload="auto">
+    <source src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-badge-unlocked-2058.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="click-sound" preload="auto">
+    <source src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="timer-sound" preload="auto">
+    <source src="https://assets.mixkit.co/sfx/preview/mixkit-countdown-timer-beep-989.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="mode-sound" preload="auto">
+    <source src="https://assets.mixkit.co/sfx/preview/mixkit-interface-hint-notification-911.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- 主菜单界面 -->
+  <div id="main-menu"
+    class="fixed inset-0 flex flex-col items-center justify-center z-50 bg-white/95 backdrop-blur-sm transition-opacity duration-500">
+    <div
+      class="max-w-md w-full p-8 bg-white rounded-2xl shadow-xl transform transition-all duration-500 hover:shadow-2xl">
+      <div class="text-center mb-8">
+        <h1 class="text-[clamp(2rem,5vw,3rem)] font-bold text-primary mb-2 text-shadow">画圆测试</h1>
+        <p class="text-dark/60 italic">挑战完美的几何艺术</p>
+        <div class="w-20 h-1 bg-primary/50 mx-auto rounded-full my-4"></div>
+      </div>
+
+      <!-- 游戏模式选择 -->
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold mb-3 text-center">选择游戏模式</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <button id="classic-mode-btn"
+            class="mode-btn py-3 bg-primary text-white rounded-xl transition-all duration-300 active flex flex-col items-center">
+            <i class="fa fa-circle-o text-xl block mb-1"></i>
+            <span>经典模式</span>
+          </button>
+          <button id="timed-mode-btn"
+            class="mode-btn py-3 bg-neutral hover:bg-primary hover:text-white rounded-xl transition-all duration-300 flex flex-col items-center">
+            <i class="fa fa-clock-o text-xl block mb-1"></i>
+            <span>计时模式</span>
+          </button>
+          <button id="marathon-mode-btn"
+            class="mode-btn py-3 bg-neutral hover:bg-primary hover:text-white rounded-xl transition-all duration-300 flex flex-col items-center">
+            <i class="fa fa-refresh text-xl block mb-1"></i>
+            <span>马拉松</span>
+          </button>
+          <button id="custom-mode-btn"
+            class="mode-btn py-3 bg-neutral hover:bg-primary hover:text-white rounded-xl transition-all duration-300 flex flex-col items-center">
+            <i class="fa fa-sliders text-xl block mb-1"></i>
+            <span>自定义</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <button id="achievements-btn"
+          class="w-full py-3 bg-neutral hover:bg-neutral/80 text-dark font-bold rounded-xl transition-all duration-300 flex items-center justify-center">
+          <i class="fa fa-trophy mr-2 text-accent"></i>
+          <span>成就</span>
+        </button>
+
+        <button id="leaderboard-btn"
+          class="w-full py-3 bg-neutral hover:bg-neutral/80 text-dark font-bold rounded-xl transition-all duration-300 flex items-center justify-center">
+          <i class="fa fa-star mr-2 text-primary"></i>
+          <span>排行榜</span>
+        </button>
+
+        <button id="settings-btn"
+          class="w-full py-3 bg-neutral hover:bg-neutral/80 text-dark font-bold rounded-xl transition-all duration-300 flex items-center justify-center">
+          <i class="fa fa-cog mr-2"></i>
+          <span>设置</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 装饰元素 -->
+    <div class="absolute top-10 left-10 w-16 h-16 rounded-full border-4 border-primary/20 pulse-ring"></div>
+    <div class="absolute bottom-20 right-10 w-12 h-12 rounded-full border-4 border-accent/20 pulse-ring"
+      style="animation-delay: 0.5s"></div>
+  </div>
+
+  <!-- 难度选择弹窗 -->
+  <div id="difficulty-modal"
+    class="fixed inset-0 flex items-center justify-center z-40 bg-black/30 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full transform transition-all duration-500 scale-95">
+      <div class="text-center mb-4">
+        <h2 class="text-2xl font-bold text-primary mb-2">选择难度</h2>
+        <div class="w-16 h-1 bg-primary/50 mx-auto rounded-full"></div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <button class="difficulty-btn in-game py-3 bg-primary text-white rounded-xl transition-all duration-300 active"
+          data-difficulty="easy">
+          <i class="fa fa-smile-o block mb-1"></i>简单
+        </button>
+        <button
+          class="difficulty-btn in-game py-3 bg-neutral hover:bg-primary hover:text-white rounded-xl transition-all duration-300"
+          data-difficulty="medium">
+          <i class="fa fa-meh-o block mb-1"></i>中等
+        </button>
+        <button
+          class="difficulty-btn in-game py-3 bg-neutral hover:bg-primary hover:text-white rounded-xl transition-all duration-300"
+          data-difficulty="hard">
+          <i class="fa fa-frown-o block mb-1"></i>困难
+        </button>
+      </div>
+
+      <div class="space-y-2 text-sm mb-6">
+        <p class="text-dark/70"><i class="fa fa-info-circle text-primary mr-1"></i> 切换难度将影响下一次绘制的评分标准</p>
+        <p class="text-dark/70"><i class="fa fa-check-circle text-secondary mr-1"></i> 简单：宽容度高，适合新手</p>
+        <p class="text-dark/70"><i class="fa fa-check-circle text-secondary mr-1"></i> 中等：标准严格，适合练习</p>
+        <p class="text-dark/70"><i class="fa fa-check-circle text-secondary mr-1"></i> 困难：高要求，挑战极限</p>
+      </div>
+
+      <button id="close-difficulty-btn"
+        class="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-all duration-300">
+        确认选择
+      </button>
+    </div>
+  </div>
+
+  <!-- 成就弹窗 -->
+  <div id="achievements-modal"
+    class="fixed inset-0 flex items-center justify-center z-40 bg-black/30 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+    <div
+      class="bg-white rounded-2xl shadow-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto transform transition-all duration-500 scale-95">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-primary mb-2">成就系统</h2>
+        <div class="w-16 h-1 bg-primary/50 mx-auto rounded-full"></div>
+        <p class="text-dark/60 mt-2">完成挑战解锁成就徽章</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6" id="achievements-grid">
+        <!-- 成就将通过JS动态生成 -->
+      </div>
+
+      <button id="close-achievements-btn"
+        class="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-all duration-300">
+        关闭
+      </button>
+    </div>
+  </div>
+
+  <!-- 排行榜弹窗 -->
+  <div id="leaderboard-modal"
+    class="fixed inset-0 flex items-center justify-center z-40 bg-black/30 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+    <div
+      class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto transform transition-all duration-500 scale-95">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-primary mb-2">排行榜</h2>
+        <div class="w-16 h-1 bg-primary/50 mx-auto rounded-full"></div>
+      </div>
+
+      <div class="mb-4">
+        <div class="grid grid-cols-3 gap-2 mb-3 text-sm font-semibold text-dark/70">
+          <div class="text-center">排名</div>
+          <div class="text-center">分数</div>
+          <div class="text-center">模式</div>
+        </div>
+
+        <div id="leaderboard-list" class="space-y-2">
+          <!-- 排行榜数据将通过JS动态生成 -->
+        </div>
+      </div>
+
+      <button id="close-leaderboard-btn"
+        class="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-all duration-300">
+        关闭
+      </button>
+    </div>
+  </div>
+
+  <!-- 设置弹窗 -->
+  <div id="settings-modal"
+    class="fixed inset-0 flex items-center justify-center z-40 bg-black/30 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full transform transition-all duration-500 scale-95">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-primary mb-2">设置</h2>
+        <div class="w-16 h-1 bg-primary/50 mx-auto rounded-full"></div>
+      </div>
+
+      <div class="space-y-5 mb-6">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center">
+            <i class="fa fa-volume-up text-primary mr-3"></i>
+            <span>音效</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="sound-toggle" class="sr-only peer" checked>
+            <div
+              class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary">
+            </div>
+          </label>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <div class="flex items-center">
+            <i class="fa fa-paint-brush text-primary mr-3"></i>
+            <span>画笔颜色</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="w-8 h-8 rounded-full bg-primary border-2 border-white shadow-sm paint-color-btn active"
+              data-color="#3B82F6"></button>
+            <button class="w-8 h-8 rounded-full bg-secondary border-2 border-white shadow-sm paint-color-btn"
+              data-color="#10B981"></button>
+            <button class="w-8 h-8 rounded-full bg-accent border-2 border-white shadow-sm paint-color-btn"
+              data-color="#F59E0B"></button>
+            <button class="w-8 h-8 rounded-full bg-danger border-2 border-white shadow-sm paint-color-btn"
+              data-color="#EF4444"></button>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <div class="flex items-center">
+            <i class="fa fa-ruler text-primary mr-3"></i>
+            <span>画笔粗细</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <input type="range" id="brush-thickness" min="1" max="8" value="3"
+              class="w-24 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+            <span id="thickness-value" class="text-sm font-medium">3px</span>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <div class="flex items-center">
+            <i class="fa fa-eraser text-primary mr-3"></i>
+            <span>清除数据</span>
+          </div>
+          <button id="clear-data-btn" class="text-danger hover:text-danger/80 transition-colors">
+            <i class="fa fa-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <button id="close-settings-btn"
+        class="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-all duration-300">
+        保存设置
+      </button>
+    </div>
+  </div>
+
+  <!-- 游戏画布区域 -->
+  <div id="game-container"
+    class="fixed inset-0 flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-500">
+    <!-- 顶部工具栏 -->
+    <div class="absolute top-4 left-0 right-0 flex justify-between items-center px-6 z-10">
+      <div class="bg-white/80 backdrop-blur-sm rounded-full py-2 px-6 shadow-md flex items-center">
+        <span class="text-dark/80 mr-2">得分:</span>
+        <span id="score-display" class="text-2xl font-bold text-primary">0</span>
+      </div>
+
+      <div class="flex gap-3">
+        <button id="difficulty-btn"
+          class="bg-white/80 backdrop-blur-sm hover:bg-white text-dark/80 hover:text-dark py-2 px-4 rounded-full shadow-md transition-all duration-300 flex items-center">
+          <i class="fa fa-sliders mr-1"></i>
+          <span class="hidden sm:inline">难度</span>
+        </button>
+
+        <button id="mode-info-btn"
+          class="bg-white/80 backdrop-blur-sm hover:bg-white text-dark/80 hover:text-dark py-2 px-4 rounded-full shadow-md transition-all duration-300">
+          <i class="fa fa-info-circle"></i>
+        </button>
+
+        <button id="restart-btn"
+          class="bg-white/80 backdrop-blur-sm hover:bg-white text-dark/80 hover:text-dark py-2 px-4 rounded-full shadow-md transition-all duration-300 flex items-center">
+          <i class="fa fa-refresh mr-1"></i>
+          <span class="hidden sm:inline">重置</span>
+        </button>
+
+        <button id="exit-btn"
+          class="bg-white/80 backdrop-blur-sm hover:bg-white text-dark/80 hover:text-dark py-2 px-4 rounded-full shadow-md transition-all duration-300 flex items-center">
+          <i class="fa fa-sign-out mr-1"></i>
+          <span class="hidden sm:inline">退出</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 模式和难度指示器 -->
+    <div class="absolute top-20 left-0 right-0 flex flex-wrap justify-center gap-2 z-10">
+      <div class="bg-white/80 backdrop-blur-sm rounded-full py-1 px-4 shadow-md text-sm">
+        <span id="mode-indicator" class="text-dark/80">模式: 经典模式</span>
+      </div>
+      <div class="bg-white/80 backdrop-blur-sm rounded-full py-1 px-4 shadow-md text-sm">
+        <span id="difficulty-indicator" class="text-dark/80">难度: 简单</span>
+      </div>
+
+      <!-- 计时模式计时器 -->
+      <div id="timer-display" class="hidden bg-white/80 backdrop-blur-sm rounded-full py-1 px-4 shadow-md text-sm">
+        <span class="text-dark/80">剩余时间: </span>
+        <span id="time-remaining" class="font-medium">30s</span>
+      </div>
+
+      <!-- 马拉松模式计数器 -->
+      <div id="marathon-counter" class="hidden bg-white/80 backdrop-blur-sm rounded-full py-1 px-4 shadow-md text-sm">
+        <span class="text-dark/80">连续次数: </span>
+        <span id="streak-count" class="font-medium text-accent">0</span>
+      </div>
+    </div>
+
+    <!-- 画布 -->
+    <canvas id="drawing-canvas" class="absolute inset-0 grid-pattern bg-neutral/50"
+      style="background-size: 20px 20px;"></canvas>
+
+    <!-- 辅助提示 -->
+    <div id="drawing-hint"
+      class="absolute inset-0 flex items-center justify-center z-20 pointer-events-none opacity-0 transition-opacity duration-500">
+      <div class="text-primary/30 text-5xl font-bold pulse-ring">
+        <i class="fa fa-circle-o"></i>
+      </div>
+    </div>
+
+    <!-- 结果弹窗 -->
+    <div id="result-modal"
+      class="fixed inset-0 flex items-center justify-center z-40 bg-black/30 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+      <div
+        class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full transform transition-all duration-500 scale-95 relative">
+        <div class="text-center mb-4">
+          <h2 id="result-title" class="text-3xl font-bold text-primary mb-2">你的成绩</h2>
+          <div class="w-16 h-1 bg-primary/50 mx-auto rounded-full"></div>
+        </div>
+
+        <!-- 成就徽章 -->
+        <div id="achievement-badge"
+          class="hidden absolute -top-16 left-1/2 transform -translate-x-1/2 bg-accent text-white rounded-full w-32 h-32 flex items-center justify-center flex-col shadow-lg float">
+          <i class="fa fa-trophy text-4xl mb-1"></i>
+          <span class="font-bold text-sm">解锁成就！</span>
+        </div>
+
+        <div class="flex justify-center mb-6">
+          <div class="relative w-40 h-40 flex items-center justify-center">
+            <div id="score-circle" class="absolute w-full h-full rounded-full border-8 border-primary/20"></div>
+            <div id="score-progress"
+              class="absolute w-full h-full rounded-full border-8 border-primary border-t-transparent border-r-transparent border-b-transparent transform -rotate-90 transition-all duration-1000">
+            </div>
+            <span id="final-score" class="text-5xl font-bold text-primary">0</span>
+            <span class="absolute bottom-0 text-dark/70">分</span>
+          </div>
+        </div>
+
+        <div class="space-y-3 mb-6">
+          <div class="flex justify-between items-center">
+            <span class="text-dark/70">圆度:</span>
+            <span id="roundness-value" class="font-medium">0%</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div id="roundness-bar" class="bg-primary h-2 rounded-full transition-all duration-700" style="width: 0%">
+            </div>
+          </div>
+
+          <div class="flex justify-between items-center">
+            <span class="text-dark/70">对称性:</span>
+            <span id="symmetry-value" class="font-medium">0%</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div id="symmetry-bar" class="bg-secondary h-2 rounded-full transition-all duration-700" style="width: 0%">
+            </div>
+          </div>
+
+          <div class="flex justify-between items-center">
+            <span class="text-dark/70">闭合度:</span>
+            <span id="closure-value" class="font-medium">0%</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div id="closure-bar" class="bg-accent h-2 rounded-full transition-all duration-700" style="width: 0%">
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <button id="share-btn"
+            class="py-3 bg-neutral hover:bg-neutral/80 text-dark font-bold rounded-xl transition-all duration-300 flex items-center justify-center">
+            <i class="fa fa-share-alt mr-2"></i>
+            <span>分享</span>
+          </button>
+          <button id="play-again-btn"
+            class="py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-all duration-300 flex items-center justify-center">
+            <span>再玩一次</span>
+            <i class="fa fa-repeat ml-2"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模式说明弹窗 -->
+  <div id="mode-info-modal"
+    class="fixed inset-0 flex items-center justify-center z-40 bg-black/30 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full transform transition-all duration-500 scale-95">
+      <div class="text-center mb-4">
+        <h2 id="mode-info-title" class="text-2xl font-bold text-primary mb-2">经典模式</h2>
+        <div class="w-16 h-1 bg-primary/50 mx-auto rounded-full"></div>
+      </div>
+
+      <div class="space-y-3 mb-6 text-sm">
+        <div id="mode-info-content">
+          <p class="text-dark/80 leading-relaxed flex items-start">
+            <i class="fa fa-info-circle text-primary mt-1 mr-2"></i>
+            <span>经典模式中，你可以不受时间限制地绘制圆形，系统会根据圆的完美程度进行评分。</span>
+          </p>
+          <p class="text-dark/80 leading-relaxed flex items-start">
+            <i class="fa fa-check-circle text-secondary mt-1 mr-2"></i>
+            <span>尝试让绘制的圆形尽可能接近正圆形。</span>
+          </p>
+          <p class="text-dark/80 leading-relaxed flex items-start">
+            <i class="fa fa-check-circle text-secondary mt-1 mr-2"></i>
+            <span>起点和终点越接近，闭合度得分越高。</span>
+          </p>
+        </div>
+      </div>
+
+      <button id="close-mode-info-btn"
+        class="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-all duration-300">
+        明白了
+      </button>
+    </div>
+  </div>
+
+  <!-- 庆祝彩屑容器 -->
+  <div id="confetti-container" class="fixed inset-0 pointer-events-none z-50"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 游戏配置和状态
+      const config = {
+        soundEnabled: true,
+        brushColor: '#3B82F6',
+        brushThickness: 3,
+        currentMode: 'classic', // classic, timed, marathon, custom
+        currentDifficulty: 'easy', // easy, medium, hard
+        timerDuration: 30, // 计时模式默认30秒
+        marathonStreak: 0
+      };
+
+      // 游戏数据 - 从本地存储加载
+      let gameData = JSON.parse(localStorage.getItem('circleGameData')) || {
+        highScores: {
+          classic: { easy: 0, medium: 0, hard: 0 },
+          timed: { easy: 0, medium: 0, hard: 0 },
+          marathon: { easy: 0, medium: 0, hard: 0 }
+        },
+        achievements: [
+          { id: 'first_draw', name: '初次尝试', description: '完成第一次绘制', unlocked: false, icon: 'fa-pencil', isNew: false },
+          { id: 'perfect_circle', name: '完美圆形', description: '获得90分以上', unlocked: false, icon: 'fa-star', isNew: false },
+          { id: 'all_modes', name: '模式大师', description: '尝试所有游戏模式', unlocked: false, icon: 'fa-th', isNew: false },
+          { id: 'hard_mode', name: '挑战极限', description: '在困难难度获得70分以上', unlocked: false, icon: 'fa-bolt', isNew: false },
+          { id: 'marathon_5', name: '连续5次', description: '马拉松模式连续5次绘制', unlocked: false, icon: 'fa-refresh', isNew: false },
+          { id: 'timed_expert', name: '时间大师', description: '计时模式获得80分以上', unlocked: false, icon: 'fa-clock-o', isNew: false }
+        ],
+        drawingHistory: []
+      };
+
+      // 难度参数
+      const difficultyParams = {
+        easy: {
+          maxDeviationFactor: 0.3, // 最大允许偏差为平均半径的30%
+          symmetryWeight: 0.4,
+          roundnessWeight: 0.4,
+          closureWeight: 0.2
+        },
+        medium: {
+          maxDeviationFactor: 0.2, // 20%
+          symmetryWeight: 0.45,
+          roundnessWeight: 0.45,
+          closureWeight: 0.1
+        },
+        hard: {
+          maxDeviationFactor: 0.1, // 10%
+          symmetryWeight: 0.5,
+          roundnessWeight: 0.5,
+          closureWeight: 0.0
+        }
+      };
+
+      // DOM元素引用
+      const elements = {
+        // 主要容器
+        mainMenu: document.getElementById('main-menu'),
+        gameContainer: document.getElementById('game-container'),
+        drawingCanvas: document.getElementById('drawing-canvas'),
+        ctx: document.getElementById('drawing-canvas').getContext('2d'),
+
+        // 模态框
+        difficultyModal: document.getElementById('difficulty-modal'),
+        achievementsModal: document.getElementById('achievements-modal'),
+        leaderboardModal: document.getElementById('leaderboard-modal'),
+        settingsModal: document.getElementById('settings-modal'),
+        resultModal: document.getElementById('result-modal'),
+        modeInfoModal: document.getElementById('mode-info-modal'),
+
+        // 按钮
+        modeBtns: document.querySelectorAll('.mode-btn'),
+        difficultyBtns: document.querySelectorAll('.difficulty-btn'),
+        restartBtn: document.getElementById('restart-btn'),
+        playAgainBtn: document.getElementById('play-again-btn'),
+        exitBtn: document.getElementById('exit-btn'),
+        shareBtn: document.getElementById('share-btn'),
+        achievementsBtn: document.getElementById('achievements-btn'),
+        leaderboardBtn: document.getElementById('leaderboard-btn'),
+        settingsBtn: document.getElementById('settings-btn'),
+        difficultyBtn: document.getElementById('difficulty-btn'),
+        modeInfoBtn: document.getElementById('mode-info-btn'),
+        clearDataBtn: document.getElementById('clear-data-btn'),
+        soundToggle: document.getElementById('sound-toggle'),
+        brushThickness: document.getElementById('brush-thickness'),
+        thicknessValue: document.getElementById('thickness-value'),
+        paintColorBtns: document.querySelectorAll('.paint-color-btn'),
+
+        // 关闭按钮
+        closeDifficultyBtn: document.getElementById('close-difficulty-btn'),
+        closeAchievementsBtn: document.getElementById('close-achievements-btn'),
+        closeLeaderboardBtn: document.getElementById('close-leaderboard-btn'),
+        closeSettingsBtn: document.getElementById('close-settings-btn'),
+        closeModeInfoBtn: document.getElementById('close-mode-info-btn'),
+
+        // 显示元素
+        scoreDisplay: document.getElementById('score-display'),
+        finalScore: document.getElementById('final-score'),
+        scoreProgress: document.getElementById('score-progress'),
+        roundnessValue: document.getElementById('roundness-value'),
+        symmetryValue: document.getElementById('symmetry-value'),
+        closureValue: document.getElementById('closure-value'),
+        roundnessBar: document.getElementById('roundness-bar'),
+        symmetryBar: document.getElementById('symmetry-bar'),
+        closureBar: document.getElementById('closure-bar'),
+        resultTitle: document.getElementById('result-title'),
+        modeIndicator: document.getElementById('mode-indicator'),
+        difficultyIndicator: document.getElementById('difficulty-indicator'),
+        timerDisplay: document.getElementById('timer-display'),
+        timeRemaining: document.getElementById('time-remaining'),
+        marathonCounter: document.getElementById('marathon-counter'),
+        streakCount: document.getElementById('streak-count'),
+        achievementBadge: document.getElementById('achievement-badge'),
+        drawingHint: document.getElementById('drawing-hint'),
+        modeInfoTitle: document.getElementById('mode-info-title'),
+        modeInfoContent: document.getElementById('mode-info-content'),
+
+        // 容器
+        achievementsGrid: document.getElementById('achievements-grid'),
+        leaderboardList: document.getElementById('leaderboard-list'),
+        confettiContainer: document.getElementById('confetti-container'),
+
+        // 音效
+        drawSound: document.getElementById('draw-sound'),
+        successSound: document.getElementById('success-sound'),
+        clickSound: document.getElementById('click-sound'),
+        timerSound: document.getElementById('timer-sound'),
+        modeSound: document.getElementById('mode-sound')
+      };
+
+      // 游戏状态变量
+      let isDrawing = false;
+      let startX = 0;
+      let startY = 0;
+      let currentPath = [];
+      let allPaths = [];
+      let isGameActive = false;
+      let timerInterval = null;
+      let remainingTime = config.timerDuration;
+      let modesPlayed = [];
+
+      // 初始化游戏
+      function init() {
+        resizeCanvas();
+        renderAchievements();
+        renderLeaderboard();
+        elements.soundToggle.checked = config.soundEnabled;
+        elements.brushThickness.value = config.brushThickness;
+        elements.thicknessValue.textContent = `${config.brushThickness}px`;
+
+        // 设置初始画笔颜色
+        elements.paintColorBtns.forEach(btn => {
+          if (btn.dataset.color === config.brushColor) {
+            btn.classList.add('active');
+          }
+        });
+
+        // 绑定事件监听
+        bindEvents();
+      }
+
+      // 设置画布尺寸
+      function resizeCanvas() {
+        elements.drawingCanvas.width = window.innerWidth;
+        elements.drawingCanvas.height = window.innerHeight;
+
+        // 根据难度调整网格密度
+        if (config.currentDifficulty === 'hard') {
+          elements.drawingCanvas.style.backgroundSize = '10px 10px';
+        } else if (config.currentDifficulty === 'medium') {
+          elements.drawingCanvas.style.backgroundSize = '15px 15px';
+        } else {
+          elements.drawingCanvas.style.backgroundSize = '20px 20px';
+        }
+      }
+
+      // 播放音效
+      function playSound(sound) {
+        if (config.soundEnabled) {
+          sound.currentTime = 0;
+          sound.play().catch(e => console.log('Audio play prevented:', e));
+        }
+      }
+
+      // 开始游戏
+      function startGame() {
+        playSound(elements.clickSound);
+        elements.mainMenu.classList.add('opacity-0');
+        setTimeout(() => {
+          elements.mainMenu.classList.add('hidden');
+          elements.gameContainer.classList.remove('opacity-0', 'pointer-events-none');
+          isGameActive = true;
+
+          // 记录已玩过的模式
+          if (!modesPlayed.includes(config.currentMode)) {
+            modesPlayed.push(config.currentMode);
+            checkAchievements();
+          }
+
+          // 根据模式初始化
+          initGameMode();
+
+          // 显示提示
+          setTimeout(() => {
+            elements.drawingHint.classList.remove('opacity-0');
+            setTimeout(() => {
+              elements.drawingHint.classList.add('opacity-0');
+            }, 2000);
+          }, 500);
+        }, 500);
+
+        updateUI();
+      }
+
+      // 根据游戏模式初始化
+      function initGameMode() {
+        // 重置模式相关UI
+        elements.timerDisplay.classList.add('hidden');
+        elements.marathonCounter.classList.add('hidden');
+        clearInterval(timerInterval);
+
+        switch (config.currentMode) {
+          case 'classic':
+            elements.modeIndicator.textContent = '模式: 经典模式';
+            elements.modeInfoTitle.textContent = '经典模式';
+            elements.modeInfoContent.innerHTML = `
+              <p class="text-dark/80 leading-relaxed flex items-start">
+                <i class="fa fa-info-circle text-primary mt-1 mr-2"></i>
+                <span>经典模式中，你可以不受时间限制地绘制圆形，系统会根据圆的完美程度进行评分。</span>
+              </p>
+              <p class="text-dark/80 leading-relaxed flex items-start">
+                <i class="fa fa-check-circle text-secondary mt-1 mr-2"></i>
+                <span>尝试让绘制的圆形尽可能接近正圆形。</span>
+              </p>
+              <p class="text-dark/80 leading-relaxed flex items-start">
+                <i class="fa fa-check-circle text-secondary mt-1 mr-2"></i>
+                <span>起点和终点越接近，闭合度得分越高。</span>
+              </p>
+            `;
+            break;
+
+          case 'timed':
+            elements.modeIndicator.textContent = '模式: 计时模式';
+            elements.timerDisplay.classList.remove('hidden');
+            remainingTime = config.timerDuration;
+            elements.timeRemaining.textContent = `${remainingTime}s`;
+
+            elements.modeInfoTitle.textContent = '计时模式';
+            elements.modeInfoContent.innerHTML = `
+              <p class="text-dark/80 leading-relaxed flex items-start">
+                <i class="fa fa-info-circle text-primary mt-1 mr-2"></i>
+                <span>计时模式中，你需要在限定时间内完成圆形绘制。</span>
+              </p>
+              <p class="text-dark/80 leading-relaxed flex items-start">
+                <i class="fa fa-check-circle text-secondary mt-1 mr-2"></i>
+                <span>时间有限，快速绘制一个尽可能完美的圆形。</span>
+              </p>
+              <p class="text-dark/80 leading-relaxed flex items-start">
+                <i class="fa fa-check-circle text-secondary mt-1 mr-2"></i>
+                <span>剩余时间越少，完成后得分加成越高。</span>
+              </p>
+            `;
+
+            // 启动计时器
+            timerInterval = setInterval(() => {
+              remainingTime--;
+              elements.timeRemaining.textContent = `${remainingTime}s`;
+
+              // 时间快用完时添加动画效果
+              if (remainingTime <= 5) {
+                elements.timeRemaining.classList.add('timer-pulse', 'text-danger');
+                playSound(elements.timerSound);
+              }
+
+              if (remainingTime <= 0) {
+                clearInterval(timerInterval);
+                if (currentPath.length > 5) {
+                  // 时间到，自动提交当前绘制
+                  finishDrawing();
+                } else {
+                  // 没有有效绘制
+                  showResult(0, 0, 0, 0);
+                }
+              }
+            }, 1000);
+            break;
+
+          case 'marathon':
+            elements.modeIndicator.textContent = '模式: 马拉松模式';
+            elements.marathonCounter.classList.remove('hidden');
+            config.marathonStreak = 0;
+            elements.streakCount.textContent = config.marathonStreak;
+
+            elements.modeInfoTitle.textContent = '马拉松模式';
+            elements.modeInfoContent.innerHTML = `
+              <p class="text-dark/80 leading-relaxed flex items-start">
+                <i class="fa fa-info-circle text-primary mt-1 mr-2"></i>
+                <span>马拉松模式中，你需要连续绘制多个圆形，保持稳定的表现。</span>
+              </p>
+              <p class="text-dark/80 leading-relaxed flex items-start">
+                <i class="fa fa-check-circle text-secondary mt-1 mr-2"></i>
+                <span>每次得分50分以上可增加连续次数。</span>
+              </p>
+              <p class="text-dark/80 leading-relaxed flex items-start">
+                <i class="fa fa-check-circle text-secondary mt-1 mr-2"></i>
+                <span>连续次数越多，得分加成越高。</span>
+              </p>
+            `;
+            break;
+
+          case 'custom':
+            elements.modeIndicator.textContent = '模式: 自定义模式';
+            elements.modeInfoTitle.textContent = '自定义模式';
+            elements.modeInfoContent.innerHTML = `
+              <p class="text-dark/80 leading-relaxed flex items-start">
+                <i class="fa fa-info-circle text-primary mt-1 mr-2"></i>
+                <span>自定义模式使用你设置的画笔参数进行绘制。</span>
+              </p>
+              <p class="text-dark/80 leading-relaxed flex items-start">
+                <i class="fa fa-check-circle text-secondary mt-1 mr-2"></i>
+                <span>可以在设置中调整画笔颜色和粗细。</span>
+              </p>
+              <p class="text-dark/80 leading-relaxed flex items-start">
+                <i class="fa fa-check-circle text-secondary mt-1 mr-2"></i>
+                <span>挑战使用不同参数绘制完美圆形。</span>
+              </p>
+            `;
+            break;
+        }
+      }
+
+      // 更新UI显示
+      function updateUI() {
+        // 更新难度指示器
+        const difficultyNames = {
+          easy: '简单',
+          medium: '中等',
+          hard: '困难'
+        };
+        elements.difficultyIndicator.textContent = `难度: ${difficultyNames[config.currentDifficulty]}`;
+
+        // 更新画笔设置
+        elements.ctx.strokeStyle = config.brushColor;
+        elements.ctx.lineWidth = config.brushThickness;
+      }
+
+      // 重置游戏
+      function resetGame() {
+        playSound(elements.clickSound);
+        elements.ctx.clearRect(0, 0, elements.drawingCanvas.width, elements.drawingCanvas.height);
+        currentPath = [];
+        allPaths = [];
+        elements.scoreDisplay.textContent = '0';
+        isGameActive = true;
+
+        // 重新初始化当前模式
+        if (config.currentMode === 'timed') {
+          clearInterval(timerInterval);
+          remainingTime = config.timerDuration;
+          elements.timeRemaining.textContent = `${remainingTime}s`;
+          elements.timeRemaining.classList.remove('timer-pulse', 'text-danger');
+
+          // 重启计时器
+          timerInterval = setInterval(() => {
+            remainingTime--;
+            elements.timeRemaining.textContent = `${remainingTime}s`;
+
+            if (remainingTime <= 5) {
+              elements.timeRemaining.classList.add('timer-pulse', 'text-danger');
+              playSound(elements.timerSound);
+            }
+
+            if (remainingTime <= 0) {
+              clearInterval(timerInterval);
+              if (currentPath.length > 5) {
+                finishDrawing();
+              } else {
+                showResult(0, 0, 0, 0);
+              }
+            }
+          }, 1000);
+        }
+      }
+
+      // 完成绘制并计算结果
+      function finishDrawing() {
+        if (isDrawing) {
+          isDrawing = false;
+
+          if (currentPath.length > 20) { // 确保有足够的点
+            allPaths.push([...currentPath]);
+
+            // 计算基本得分
+            let { score, roundness, symmetry, closure } = calculateScore(currentPath);
+
+            // 根据模式应用得分加成
+            let bonus = 0;
+            if (config.currentMode === 'timed') {
+              // 计时模式：剩余时间越多，加成越高
+              bonus = (remainingTime / config.timerDuration) * 20;
+              score = Math.min(100, score + bonus);
+            } else if (config.currentMode === 'marathon') {
+              // 马拉松模式：连续次数越多，加成越高
+              if (score >= 50) {
+                config.marathonStreak++;
+                bonus = Math.min(30, config.marathonStreak * 2);
+                score = Math.min(100, score + bonus);
+              } else {
+                config.marathonStreak = 0;
+              }
+              elements.streakCount.textContent = config.marathonStreak;
+            }
+
+            // 显示结果
+            showResult(score, roundness, symmetry, closure);
+
+            // 检查成就
+            checkAchievements(score);
+
+            // 更新最高分
+            updateHighScore(score);
+          }
+        }
+      }
+
+      // 更新最高分
+      function updateHighScore(score) {
+        if (score > gameData.highScores[config.currentMode][config.currentDifficulty]) {
+          gameData.highScores[config.currentMode][config.currentDifficulty] = Math.round(score);
+          saveGameData();
+        }
+      }
+
+      // 添加到历史记录
+      function addToHistory(score, roundness, symmetry, closure) {
+        const now = new Date();
+        const dateStr = `${now.getMonth() + 1}/${now.getDate()} ${now.getHours()}:${now.getMinutes()}`;
+
+        const record = {
+          id: Date.now(),
+          date: dateStr,
+          score: Math.round(score),
+          roundness: Math.round(roundness * 100),
+          symmetry: Math.round(symmetry * 100),
+          closure: Math.round(closure * 100),
+          difficulty: config.currentDifficulty,
+          mode: config.currentMode
+        };
+
+        gameData.drawingHistory.unshift(record);
+        if (gameData.drawingHistory.length > 20) {
+          gameData.drawingHistory.pop();
+        }
+
+        saveGameData();
+      }
+
+      // 检查成就解锁
+      function checkAchievements(score = 0) {
+        let newAchievement = false;
+
+        // 初次尝试
+        if (gameData.drawingHistory.length > 0 && !gameData.achievements.find(a => a.id === 'first_draw').unlocked) {
+          unlockAchievement('first_draw');
+          newAchievement = true;
+        }
+
+        // 完美圆形
+        if (score >= 90 && !gameData.achievements.find(a => a.id === 'perfect_circle').unlocked) {
+          unlockAchievement('perfect_circle');
+          newAchievement = true;
+        }
+
+        // 尝试所有模式
+        if (modesPlayed.length >= 3 && !gameData.achievements.find(a => a.id === 'all_modes').unlocked) {
+          unlockAchievement('all_modes');
+          newAchievement = true;
+        }
+
+        // 困难模式高分
+        if (config.currentDifficulty === 'hard' && score >= 70 && !gameData.achievements.find(a => a.id === 'hard_mode').unlocked) {
+          unlockAchievement('hard_mode');
+          newAchievement = true;
+        }
+
+        // 马拉松连续5次
+        if (config.marathonStreak >= 5 && !gameData.achievements.find(a => a.id === 'marathon_5').unlocked) {
+          unlockAchievement('marathon_5');
+          newAchievement = true;
+        }
+
+        // 计时模式高分
+        if (config.currentMode === 'timed' && score >= 80 && !gameData.achievements.find(a => a.id === 'timed_expert').unlocked) {
+          unlockAchievement('timed_expert');
+          newAchievement = true;
+        }
+
+        // 更新成就显示
+        renderAchievements();
+
+        // 如果有新成就解锁，显示成就徽章
+        if (newAchievement && elements.resultModal.classList.contains('opacity-0')) {
+          elements.achievementBadge.classList.remove('hidden');
+          playSound(elements.successSound);
+        }
+      }
+
+      // 解锁成就
+      function unlockAchievement(id) {
+        const achievement = gameData.achievements.find(a => a.id === id);
+        if (achievement && !achievement.unlocked) {
+          achievement.unlocked = true;
+          achievement.isNew = true;
+          saveGameData();
+          createConfetti();
+        }
+      }
+
+      // 渲染成就列表
+      function renderAchievements() {
+        elements.achievementsGrid.innerHTML = '';
+
+        gameData.achievements.forEach(achievement => {
+          const achievementEl = document.createElement('div');
+          achievementEl.className = `p-4 border rounded-lg flex items-center gap-3 ${achievement.unlocked ? 'bg-primary/5' : 'bg-gray-50'}`;
+
+          achievementEl.innerHTML = `
+            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-2xl ${achievement.unlocked ? 'text-primary' : 'text-gray-400'}">
+              <i class="fa ${achievement.icon} ${achievement.unlocked ? '' : 'badge-locked'}"></i>
+            </div>
+            <div class="flex-1">
+              <h3 class="font-semibold ${achievement.unlocked ? '' : 'text-gray-500'}">${achievement.name}</h3>
+              <p class="text-sm text-dark/60">${achievement.description}</p>
+            </div>
+            ${achievement.unlocked ? `
+              <div class="w-6 h-6 rounded-full bg-secondary/20 flex items-center justify-center text-secondary">
+                <i class="fa fa-check text-xs"></i>
+              </div>
+            ` : ''}
+          `;
+
+          elements.achievementsGrid.appendChild(achievementEl);
+        });
+      }
+
+      // 渲染排行榜
+      function renderLeaderboard() {
+        elements.leaderboardList.innerHTML = '';
+
+        // 获取所有高分并排序
+        let allScores = [];
+
+        // 收集所有模式和难度的高分
+        Object.keys(gameData.highScores).forEach(mode => {
+          Object.keys(gameData.highScores[mode]).forEach(difficulty => {
+            const score = gameData.highScores[mode][difficulty];
+            if (score > 0) {
+              allScores.push({
+                score,
+                mode,
+                difficulty
+              });
+            }
+          });
+        });
+
+        // 按分数排序
+        allScores.sort((a, b) => b.score - a.score);
+
+        // 只显示前10名
+        const topScores = allScores.slice(0, 10);
+
+        if (topScores.length === 0) {
+          elements.leaderboardList.innerHTML = `
+            <div class="text-center text-dark/50 py-6">
+              <i class="fa fa-trophy text-2xl mb-2 block opacity-30"></i>
+              暂无高分记录
+            </div>
+          `;
+          return;
+        }
+
+        // 模式名称映射
+        const modeNames = {
+          classic: '经典',
+          timed: '计时',
+          marathon: '马拉松',
+          custom: '自定义'
+        };
+
+        // 难度名称映射
+        const difficultyNames = {
+          easy: '简单',
+          medium: '中等',
+          hard: '困难'
+        };
+
+        topScores.forEach((score, index) => {
+          const scoreEl = document.createElement('div');
+          scoreEl.className = `flex items-center justify-between p-2 rounded-lg ${index < 3 ? 'bg-primary/5' : 'bg-gray-50'}`;
+
+          scoreEl.innerHTML = `
+            <div class="w-6 h-6 rounded-full flex items-center justify-center ${index === 0 ? 'bg-accent text-white' :
+              index === 1 ? 'bg-gray-300 text-dark' :
+                index === 2 ? 'bg-amber-700 text-white' :
+                  'bg-gray-200 text-dark/70'
+            }">
+              ${index + 1}
+            </div>
+            <div class="font-bold ${score.score >= 90 ? 'text-secondary' : score.score >= 70 ? 'text-primary' : 'text-accent'}">
+              ${score.score}
+            </div>
+            <div class="text-sm text-dark/70">
+              ${modeNames[score.mode]}·${difficultyNames[score.difficulty]}
+            </div>
+          `;
+
+          elements.leaderboardList.appendChild(scoreEl);
+        });
+      }
+
+      // 显示结果
+      function showResult(score, roundness, symmetry, closure) {
+        isGameActive = false;
+        playSound(elements.successSound);
+
+        // 停止计时器（如果正在运行）
+        clearInterval(timerInterval);
+
+        // 添加到历史记录
+        addToHistory(score, roundness, symmetry, closure);
+
+        // 设置分数和进度条
+        const finalScoreValue = Math.round(score);
+        elements.finalScore.textContent = finalScoreValue;
+        elements.scoreDisplay.textContent = finalScoreValue;
+
+        // 计算进度条角度
+        const angle = (score / 100) * 360;
+        elements.scoreProgress.style.transform = `rotate(${(angle - 90)}deg)`;
+
+        // 设置圆度、对称性和闭合度
+        const roundnessPercent = Math.round(roundness * 100);
+        const symmetryPercent = Math.round(symmetry * 100);
+        const closurePercent = Math.round(closure * 100);
+
+        elements.roundnessValue.textContent = `${roundnessPercent}%`;
+        elements.symmetryValue.textContent = `${symmetryPercent}%`;
+        elements.closureValue.textContent = `${closurePercent}%`;
+
+        // 设置进度条宽度
+        elements.roundnessBar.style.width = `${roundnessPercent}%`;
+        elements.symmetryBar.style.width = `${symmetryPercent}%`;
+        elements.closureBar.style.width = `${closurePercent}%`;
+
+        // 根据分数设置标题
+        let titleText, titleColor;
+        if (score >= 90) {
+          titleText = "太棒了！";
+          titleColor = "text-secondary";
+          createConfetti();
+        } else if (score >= 70) {
+          titleText = "做得好！";
+          titleColor = "text-primary";
+        } else if (score >= 50) {
+          titleText = "还不错";
+          titleColor = "text-accent";
+        } else {
+          titleText = "继续努力";
+          titleColor = "text-danger";
+        }
+
+        elements.resultTitle.textContent = titleText;
+        elements.resultTitle.className = `text-3xl font-bold ${titleColor} mb-2`;
+
+        // 检查是否有新成就解锁
+        const hasNewAchievement = checkNewAchievements();
+        elements.achievementBadge.classList.toggle('hidden', !hasNewAchievement);
+
+        // 显示结果弹窗
+        setTimeout(() => {
+          elements.resultModal.classList.remove('opacity-0', 'pointer-events-none');
+          elements.resultModal.querySelector('div').classList.remove('scale-95');
+          elements.resultModal.querySelector('div').classList.add('scale-100');
+        }, 500);
+      }
+
+      // 检查是否有新解锁的成就
+      function checkNewAchievements() {
+        const newAchievements = gameData.achievements.filter(a => a.isNew);
+        // 重置新解锁标记（避免重复显示）
+        newAchievements.forEach(a => a.isNew = false);
+        return newAchievements.length > 0;
+      }
+
+      // 创建彩屑效果
+      function createConfetti() {
+        const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+        const count = 100;
+
+        // 清除现有彩屑
+        elements.confettiContainer.innerHTML = '';
+
+        for (let i = 0; i < count; i++) {
+          const confetti = document.createElement('div');
+          confetti.className = 'confetti';
+
+          // 随机属性
+          const size = Math.random() * 10 + 5;
+          const color = colors[Math.floor(Math.random() * colors.length)];
+          const startX = Math.random() * window.innerWidth;
+          const startY = -10;
+          const rotation = Math.random() * 360;
+          const duration = Math.random() * 3 + 2;
+          const delay = Math.random() * 2;
+          const distance = Math.random() * window.innerHeight / 2 + window.innerHeight / 2;
+          const sway = (Math.random() - 0.5) * 100;
+
+          // 设置样式
+          confetti.style.width = `${size}px`;
+          confetti.style.height = `${size}px`;
+          confetti.style.backgroundColor = color;
+          confetti.style.left = `${startX}px`;
+          confetti.style.top = `${startY}px`;
+          confetti.style.transform = `rotate(${rotation}deg)`;
+          confetti.style.opacity = '1';
+
+          // 添加到容器
+          elements.confettiContainer.appendChild(confetti);
+
+          // 动画
+          setTimeout(() => {
+            let startTime;
+
+            function animate(timestamp) {
+              if (!startTime) startTime = timestamp;
+              const progress = (timestamp - startTime) / (duration * 1000);
+
+              if (progress < 1) {
+                // 下落动画
+                const y = startY + progress * distance;
+                const x = startX + Math.sin(progress * Math.PI * 2) * sway;
+                const opacity = 1 - progress;
+
+                confetti.style.top = `${y}px`;
+                confetti.style.left = `${x}px`;
+                confetti.style.opacity = opacity.toString();
+
+                requestAnimationFrame(animate);
+              } else {
+                // 动画结束
+                confetti.remove();
+              }
+            }
+
+            requestAnimationFrame(animate);
+          }, delay * 1000);
+        }
+      }
+
+      // 计算圆度
+      function calculateRoundness(points) {
+        if (points.length < 3) return 0;
+
+        // 计算中心点
+        const center = {
+          x: points.reduce((sum, p) => sum + p.x, 0) / points.length,
+          y: points.reduce((sum, p) => sum + p.y, 0) / points.length
+        };
+
+        // 计算平均半径
+        const radii = points.map(p => Math.sqrt(
+          Math.pow(p.x - center.x, 2) + Math.pow(p.y - center.y, 2)
+        ));
+        const avgRadius = radii.reduce((sum, r) => sum + r, 0) / radii.length;
+
+        // 如果半径过小，视为无效
+        if (avgRadius < 20) return 0;
+
+        // 计算方差
+        const variance = radii.reduce((sum, r) => sum + Math.pow(r - avgRadius, 2), 0) / radii.length;
+        const stdDev = Math.sqrt(variance);
+
+        // 圆度评分 (标准差越小，圆度越高)
+        const maxDeviation = avgRadius * difficultyParams[config.currentDifficulty].maxDeviationFactor;
+        const roundness = Math.max(0, 1 - (stdDev / maxDeviation));
+
+        return roundness;
+      }
+
+      // 计算对称性
+      function calculateSymmetry(points) {
+        if (points.length < 3) return 0;
+
+        // 计算中心点
+        const center = {
+          x: points.reduce((sum, p) => sum + p.x, 0) / points.length,
+          y: points.reduce((sum, p) => sum + p.y, 0) / points.length
+        };
+
+        // 计算每个点相对于中心点的角度和距离
+        const pointData = points.map(p => {
+          const dx = p.x - center.x;
+          const dy = p.y - center.y;
+          return {
+            angle: Math.atan2(dy, dx),
+            distance: Math.sqrt(dx * dx + dy * dy)
+          };
+        });
+
+        // 过滤掉距离过小的点
+        const minDistance = 20;
+        const filteredPoints = pointData.filter(p => p.distance > minDistance);
+
+        if (filteredPoints.length < 3) return 0;
+
+        // 按角度排序
+        filteredPoints.sort((a, b) => a.angle - b.angle);
+
+        // 计算对称性 (比较相对点的距离差异)
+        let symmetryScore = 0;
+        const numPoints = filteredPoints.length;
+
+        for (let i = 0; i < numPoints; i++) {
+          // 找到相对点 (大约180度对面的点)
+          const oppositeAngle = (filteredPoints[i].angle + Math.PI) % (2 * Math.PI);
+
+          // 二分查找最接近的角度
+          let left = 0, right = numPoints - 1;
+          while (left <= right) {
+            const mid = Math.floor((left + right) / 2);
+            if (filteredPoints[mid].angle < oppositeAngle) {
+              left = mid + 1;
+            } else {
+              right = mid - 1;
+            }
+          }
+
+          const oppositeIndex = left % numPoints;
+          const distanceDiff = Math.abs(filteredPoints[i].distance - filteredPoints[oppositeIndex].distance);
+          const maxDistance = Math.max(filteredPoints[i].distance, filteredPoints[oppositeIndex].distance);
+
+          // 差异越小，对称性越高
+          if (maxDistance > 0) {
+            symmetryScore += 1 - (distanceDiff / maxDistance);
+          }
+        }
+
+        return symmetryScore / numPoints;
+      }
+
+      // 计算闭合度 (起点和终点的接近程度)
+      function calculateClosure(points) {
+        if (points.length < 2) return 0;
+
+        const first = points[0];
+        const last = points[points.length - 1];
+
+        // 计算距离
+        const distance = Math.sqrt(
+          Math.pow(first.x - last.x, 2) + Math.pow(first.y - last.y, 2)
+        );
+
+        // 计算平均半径以标准化距离
+        const center = {
+          x: points.reduce((sum, p) => sum + p.x, 0) / points.length,
+          y: points.reduce((sum, p) => sum + p.y, 0) / points.length
+        };
+
+        const radii = points.map(p => Math.sqrt(
+          Math.pow(p.x - center.x, 2) + Math.pow(p.y - center.y, 2)
+        ));
+        const avgRadius = radii.reduce((sum, r) => sum + r, 0) / radii.length;
+
+        // 如果平均半径过小，使用固定值
+        const reference = avgRadius > 50 ? avgRadius : 50;
+
+        // 距离越小，闭合度越高
+        const closure = Math.max(0, 1 - (distance / (reference * 0.3)));
+
+        return closure;
+      }
+
+      // 计算最终得分
+      function calculateScore(points) {
+        const roundness = calculateRoundness(points);
+        const symmetry = calculateSymmetry(points);
+        const closure = calculateClosure(points);
+
+        // 根据难度计算加权得分
+        const params = difficultyParams[config.currentDifficulty];
+        const score = (
+          roundness * params.roundnessWeight +
+          symmetry * params.symmetryWeight +
+          closure * params.closureWeight
+        ) * 100;
+
+        return { score, roundness, symmetry, closure };
+      }
+
+      // 绘制网格背景
+      function drawGrid() {
+        elements.ctx.clearRect(0, 0, elements.drawingCanvas.width, elements.drawingCanvas.height);
+
+        // 绘制所有已保存的路径
+        allPaths.forEach(path => {
+          elements.ctx.beginPath();
+          elements.ctx.moveTo(path[0].x, path[0].y);
+          for (let i = 1; i < path.length; i++) {
+            elements.ctx.lineTo(path[i].x, path[i].y);
+          }
+          elements.ctx.strokeStyle = config.brushColor;
+          elements.ctx.lineWidth = config.brushThickness;
+          elements.ctx.stroke();
+        });
+      }
+
+      // 保存游戏数据到本地存储
+      function saveGameData() {
+        localStorage.setItem('circleGameData', JSON.stringify(gameData));
+      }
+
+      // 清除所有游戏数据
+      function clearGameData() {
+        if (confirm('确定要清除所有游戏数据吗？这将删除你的成绩、成就和设置。')) {
+          gameData = {
+            highScores: {
+              classic: { easy: 0, medium: 0, hard: 0 },
+              timed: { easy: 0, medium: 0, hard: 0 },
+              marathon: { easy: 0, medium: 0, hard: 0 }
+            },
+            achievements: [
+              { id: 'first_draw', name: '初次尝试', description: '完成第一次绘制', unlocked: false, icon: 'fa-pencil', isNew: false },
+              { id: 'perfect_circle', name: '完美圆形', description: '获得90分以上', unlocked: false, icon: 'fa-star', isNew: false },
+              { id: 'all_modes', name: '模式大师', description: '尝试所有游戏模式', unlocked: false, icon: 'fa-th', isNew: false },
+              { id: 'hard_mode', name: '挑战极限', description: '在困难难度获得70分以上', unlocked: false, icon: 'fa-bolt', isNew: false },
+              { id: 'marathon_5', name: '连续5次', description: '马拉松模式连续5次绘制', unlocked: false, icon: 'fa-refresh', isNew: false },
+              { id: 'timed_expert', name: '时间大师', description: '计时模式获得80分以上', unlocked: false, icon: 'fa-clock-o', isNew: false }
+            ],
+            drawingHistory: []
+          };
+
+          // 重置配置
+          config.soundEnabled = true;
+          config.brushColor = '#3B82F6';
+          config.brushThickness = 3;
+
+          // 更新UI
+          elements.soundToggle.checked = true;
+          elements.brushThickness.value = 3;
+          elements.thicknessValue.textContent = '3px';
+          elements.paintColorBtns.forEach(btn => {
+            if (btn.dataset.color === config.brushColor) {
+              btn.classList.add('active');
+            } else {
+              btn.classList.remove('active');
+            }
+          });
+
+          saveGameData();
+          renderAchievements();
+          renderLeaderboard();
+
+          playSound(elements.clickSound);
+        }
+      }
+
+      // 绑定所有事件监听
+      function bindEvents() {
+        // 鼠标事件
+        elements.drawingCanvas.addEventListener('mousedown', (e) => {
+          if (!isGameActive) return;
+
+          isDrawing = true;
+          startX = e.clientX;
+          startY = e.clientY;
+          currentPath = [{ x: startX, y: startY }];
+
+          // 清除之前的路径
+          elements.ctx.clearRect(0, 0, elements.drawingCanvas.width, elements.drawingCanvas.height);
+          drawGrid();
+        });
+
+        elements.drawingCanvas.addEventListener('mousemove', (e) => {
+          if (isDrawing) {
+            const x = e.clientX;
+            const y = e.clientY;
+
+            // 限制采样频率，提高性能
+            if (currentPath.length === 0 ||
+              Math.abs(x - currentPath[currentPath.length - 1].x) > 2 ||
+              Math.abs(y - currentPath[currentPath.length - 1].y) > 2) {
+              currentPath.push({ x, y });
+
+              // 播放绘制音效 (限制频率)
+              if (currentPath.length % 20 === 0) {
+                playSound(elements.drawSound);
+              }
+
+              // 绘制当前路径
+              drawGrid();
+
+              elements.ctx.beginPath();
+              elements.ctx.moveTo(currentPath[0].x, currentPath[0].y);
+              for (let i = 1; i < currentPath.length; i++) {
+                elements.ctx.lineTo(currentPath[i].x, currentPath[i].y);
+              }
+              elements.ctx.strokeStyle = config.brushColor;
+              elements.ctx.lineWidth = config.brushThickness;
+              elements.ctx.stroke();
+            }
+          }
+        });
+
+        elements.drawingCanvas.addEventListener('mouseup', finishDrawing);
+        elements.drawingCanvas.addEventListener('mouseout', finishDrawing);
+
+        // 移动端触摸事件
+        elements.drawingCanvas.addEventListener('touchstart', (e) => {
+          if (!isGameActive) return;
+          e.preventDefault();
+
+          isDrawing = true;
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
+          currentPath = [{ x: startX, y: startY }];
+
+          // 清除之前的路径
+          elements.ctx.clearRect(0, 0, elements.drawingCanvas.width, elements.drawingCanvas.height);
+          drawGrid();
+        });
+
+        elements.drawingCanvas.addEventListener('touchmove', (e) => {
+          if (isDrawing) {
+            e.preventDefault();
+            const x = e.touches[0].clientX;
+            const y = e.touches[0].clientY;
+
+            // 限制采样频率，提高性能
+            if (currentPath.length === 0 ||
+              Math.abs(x - currentPath[currentPath.length - 1].x) > 2 ||
+              Math.abs(y - currentPath[currentPath.length - 1].y) > 2) {
+              currentPath.push({ x, y });
+
+              // 播放绘制音效 (限制频率)
+              if (currentPath.length % 20 === 0) {
+                playSound(elements.drawSound);
+              }
+
+              // 绘制当前路径
+              drawGrid();
+
+              elements.ctx.beginPath();
+              elements.ctx.moveTo(currentPath[0].x, currentPath[0].y);
+              for (let i = 1; i < currentPath.length; i++) {
+                elements.ctx.lineTo(currentPath[i].x, currentPath[i].y);
+              }
+              elements.ctx.strokeStyle = config.brushColor;
+              elements.ctx.lineWidth = config.brushThickness;
+              elements.ctx.stroke();
+            }
+          }
+        });
+
+        elements.drawingCanvas.addEventListener('touchend', finishDrawing);
+
+        // 模式选择按钮事件
+        elements.modeBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            playSound(elements.modeSound);
+            // 重置按钮样式
+            elements.modeBtns.forEach(b => {
+              b.classList.remove('active', 'bg-primary', 'text-white');
+              b.classList.add('bg-neutral', 'hover:bg-primary', 'hover:text-white');
+            });
+
+            // 设置当前按钮样式
+            btn.classList.remove('bg-neutral', 'hover:bg-primary', 'hover:text-white');
+            btn.classList.add('active', 'bg-primary', 'text-white');
+
+            // 设置游戏模式
+            if (btn.id === 'classic-mode-btn') {
+              config.currentMode = 'classic';
+            } else if (btn.id === 'timed-mode-btn') {
+              config.currentMode = 'timed';
+            } else if (btn.id === 'marathon-mode-btn') {
+              config.currentMode = 'marathon';
+            } else if (btn.id === 'custom-mode-btn') {
+              config.currentMode = 'custom';
+            }
+
+            // 开始游戏
+            startGame();
+          });
+        });
+
+        // 难度选择按钮事件
+        elements.difficultyBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            playSound(elements.clickSound);
+            // 重置按钮样式
+            elements.difficultyBtns.forEach(b => {
+              b.classList.remove('active', 'bg-primary', 'text-white');
+              b.classList.add('bg-neutral', 'hover:bg-primary', 'hover:text-white');
+            });
+
+            // 设置当前按钮样式
+            btn.classList.remove('bg-neutral', 'hover:bg-primary', 'hover:text-white');
+            btn.classList.add('active', 'bg-primary', 'text-white');
+
+            // 设置难度
+            config.currentDifficulty = btn.dataset.difficulty;
+          });
+        });
+
+        // 重新开始按钮事件
+        elements.restartBtn.addEventListener('click', resetGame);
+
+        // 再玩一次按钮事件
+        elements.playAgainBtn.addEventListener('click', () => {
+          elements.resultModal.classList.add('opacity-0', 'pointer-events-none');
+          elements.resultModal.querySelector('div').classList.remove('scale-100');
+          elements.resultModal.querySelector('div').classList.add('scale-95');
+          elements.achievementBadge.classList.add('hidden');
+          resetGame();
+        });
+
+        // 退出按钮事件
+        elements.exitBtn.addEventListener('click', () => {
+          playSound(elements.clickSound);
+          elements.gameContainer.classList.add('opacity-0', 'pointer-events-none');
+          clearInterval(timerInterval);
+
+          setTimeout(() => {
+            elements.mainMenu.classList.remove('hidden');
+            setTimeout(() => {
+              elements.mainMenu.classList.remove('opacity-0');
+            }, 100);
+          }, 500);
+        });
+
+        // 分享按钮事件
+        elements.shareBtn.addEventListener('click', () => {
+          playSound(elements.clickSound);
+          const score = elements.finalScore.textContent;
+          const text = `我在画圆测试中获得了${score}分！快来挑战我吧！`;
+
+          // 浏览器原生分享API
+          if (navigator.share) {
+            navigator.share({
+              title: '画圆测试小游戏',
+              text: text,
+              url: window.location.href
+            }).catch(err => console.log('分享失败:', err));
+          } else {
+            // 复制链接到剪贴板（降级方案）
+            navigator.clipboard.writeText(window.location.href)
+              .then(() => alert('链接已复制，快去分享吧！'))
+              .catch(err => console.log('复制失败:', err));
+          }
+        });
+
+        // 成就按钮事件
+        elements.achievementsBtn.addEventListener('click', () => {
+          playSound(elements.clickSound);
+          renderAchievements();
+          elements.achievementsModal.classList.remove('opacity-0', 'pointer-events-none');
+          elements.achievementsModal.querySelector('div').classList.remove('scale-95');
+          elements.achievementsModal.querySelector('div').classList.add('scale-100');
+        });
+
+        // 排行榜按钮事件
+        elements.leaderboardBtn.addEventListener('click', () => {
+          playSound(elements.clickSound);
+          renderLeaderboard();
+          elements.leaderboardModal.classList.remove('opacity-0', 'pointer-events-none');
+          elements.leaderboardModal.querySelector('div').classList.remove('scale-95');
+          elements.leaderboardModal.querySelector('div').classList.add('scale-100');
+        });
+
+        // 设置按钮事件
+        elements.settingsBtn.addEventListener('click', () => {
+          playSound(elements.clickSound);
+          elements.settingsModal.classList.remove('opacity-0', 'pointer-events-none');
+          elements.settingsModal.querySelector('div').classList.remove('scale-95');
+          elements.settingsModal.querySelector('div').classList.add('scale-100');
+        });
+
+        // 难度按钮事件
+        elements.difficultyBtn.addEventListener('click', () => {
+          playSound(elements.clickSound);
+          elements.difficultyModal.classList.remove('opacity-0', 'pointer-events-none');
+          elements.difficultyModal.querySelector('div').classList.remove('scale-95');
+          elements.difficultyModal.querySelector('div').classList.add('scale-100');
+        });
+
+        // 模式说明按钮事件
+        elements.modeInfoBtn.addEventListener('click', () => {
+          playSound(elements.clickSound);
+          elements.modeInfoModal.classList.remove('opacity-0', 'pointer-events-none');
+          elements.modeInfoModal.querySelector('div').classList.remove('scale-95');
+          elements.modeInfoModal.querySelector('div').classList.add('scale-100');
+        });
+
+        // 关闭按钮事件
+        elements.closeDifficultyBtn.addEventListener('click', () => {
+          playSound(elements.clickSound);
+          elements.difficultyModal.classList.add('opacity-0', 'pointer-events-none');
+          elements.difficultyModal.querySelector('div').classList.remove('scale-100');
+          elements.difficultyModal.querySelector('div').classList.add('scale-95');
+          updateUI();
+        });
+
+        elements.closeAchievementsBtn.addEventListener('click', () => {
+          playSound(elements.clickSound);
+          elements.achievementsModal.classList.add('opacity-0', 'pointer-events-none');
+          elements.achievementsModal.querySelector('div').classList.remove('scale-100');
+          elements.achievementsModal.querySelector('div').classList.add('scale-95');
+        });
+
+        elements.closeLeaderboardBtn.addEventListener('click', () => {
+          playSound(elements.clickSound);
+          elements.leaderboardModal.classList.add('opacity-0', 'pointer-events-none');
+          elements.leaderboardModal.querySelector('div').classList.remove('scale-100');
+          elements.leaderboardModal.querySelector('div').classList.add('scale-95');
+        });
+
+        elements.closeSettingsBtn.addEventListener('click', () => {
+          playSound(elements.clickSound);
+          elements.settingsModal.classList.add('opacity-0', 'pointer-events-none');
+          elements.settingsModal.querySelector('div').classList.remove('scale-100');
+          elements.settingsModal.querySelector('div').classList.add('scale-95');
+          updateUI();
+        });
+
+        elements.closeModeInfoBtn.addEventListener('click', () => {
+          playSound(elements.clickSound);
+          elements.modeInfoModal.classList.add('opacity-0', 'pointer-events-none');
+          elements.modeInfoModal.querySelector('div').classList.remove('scale-100');
+          elements.modeInfoModal.querySelector('div').classList.add('scale-95');
+        });
+
+        // 设置相关事件
+        elements.clearDataBtn.addEventListener('click', clearGameData);
+
+        elements.soundToggle.addEventListener('change', (e) => {
+          config.soundEnabled = e.target.checked;
+          saveGameData();
+        });
+
+        elements.brushThickness.addEventListener('input', (e) => {
+          config.brushThickness = parseInt(e.target.value);
+          elements.thicknessValue.textContent = `${config.brushThickness}px`;
+          saveGameData();
+        });
+
+        elements.paintColorBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            playSound(elements.clickSound);
+            elements.paintColorBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            config.brushColor = btn.dataset.color;
+            saveGameData();
+          });
+        });
+
+        // 窗口大小改变事件
+        window.addEventListener('resize', resizeCanvas);
+      }
+
+      // 启动游戏
+      init();
+    });
+  </script>
+  <!-- 深色模式同步脚本 -->
+  <script>
+    // 检测是否在iframe中运行
+    const isInIframe = window !== window.top;
+
+    // 同步深色模式
+    function syncDarkMode() {
+      // 检查父页面的深色模式设置
+      if (isInIframe) {
+        try {
+          // 尝试获取父页面的dark类
+          const parentDocument = window.parent.document;
+          const isDarkMode = parentDocument.documentElement.classList.contains('dark');
+
+          // 应用相同的模式
+          if (isDarkMode) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {
+          // 跨域限制，使用本地存储或默认设置
+          console.log('无法访问父页面，使用本地深色模式设置');
+          const savedTheme = localStorage.getItem('theme');
+          if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          }
+        }
+      } else {
+        // 如果不在iframe中，使用本地存储或默认设置
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      }
+    }
+
+    // 初始同步
+    syncDarkMode();
+
+    // 如果在iframe中，尝试监听父页面的深色模式变化
+    if (isInIframe) {
+      try {
+        // 设置定时器定期同步
+        setInterval(syncDarkMode, 1000);
+      } catch (e) {
+        console.log('无法定期同步深色模式');
+      }
+    }
+  </script>
+</body>
+
+</html>
