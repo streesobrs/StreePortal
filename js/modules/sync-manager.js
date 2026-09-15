@@ -59,7 +59,11 @@ const SyncManager = (() => {
 
     // ===== Gist 凭据管理 =====
     function getToken() {
-        return localStorage.getItem(TOKEN_STORAGE_KEY) || gistTokenEl.value.trim();
+        // 输入框的值优先（用户刚粘贴了新 token），
+        // 否则 fallback 到 localStorage（刷新后恢复上次的值）
+        const fromInput = gistTokenEl?.value.trim();
+        if (fromInput) return fromInput;
+        return localStorage.getItem(TOKEN_STORAGE_KEY) || '';
     }
     function setToken(t) {
         if (t) localStorage.setItem(TOKEN_STORAGE_KEY, t);
@@ -183,6 +187,21 @@ const SyncManager = (() => {
         }
 
         return res.json();
+    }
+
+    // 验证 Token 是否有效（GET /user）
+    async function verifyToken() {
+        const token = getToken();
+        const tokenInfo = diagnoseTokenType(token);
+        if (tokenInfo.warn) {
+            return { ok: false, error: tokenInfo.warn };
+        }
+        try {
+            const user = await githubRequest('GET', '/user');
+            return { ok: true, user: user.login, tokenInfo };
+        } catch (e) {
+            return { ok: false, error: e.message, tokenInfo };
+        }
     }
 
     // 直接 curl 测试按钮用的诊断函数
