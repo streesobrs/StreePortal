@@ -126,10 +126,34 @@ const SyncManager = (() => {
             body: body ? JSON.stringify(body) : undefined
         });
         if (!res.ok) {
-            const text = await res.text().catch(() => '');
-            throw new Error(`GitHub API ${res.status}: ${text.slice(0, 200)}`);
+            let details = '';
+            try {
+                const json = await res.json();
+                details = json.message || res.statusText;
+                if (json.documentation_url) details += ` (${json.documentation_url})`;
+            } catch {
+                details = await res.text().catch(() => res.statusText);
+            }
+            // 对 401 给出友好提示
+            if (res.status === 401) {
+                throw new Error('Token 无效或已过期。请确认 Token 未被删除，且包含 gist 权限。');
+            }
+            if (res.status === 403) {
+                throw new Error('权限不足。Token 可能没有 gist 范围，或触发了 GitHub 速率限制。');
+            }
+            throw new Error(`${res.status}: ${details}`);
         }
         return res.json();
+    }
+
+    // 先验证 Token 是否有效（GET /user）
+    async function verifyToken() {
+        try {
+            const user = await githubRequest('GET', '/user');
+            return { ok: true, user: user.login };
+        } catch (e) {
+            return { ok: false, error: e.message };
+        }
     }
 
     // 连接：如果有 gistId 就测试是否可访问；否则创建新的 secret gist
@@ -141,13 +165,30 @@ const SyncManager = (() => {
         }
         setToken(token);
 
+        // 第一步：先验证 Token 本身是否有效
+        const verify = await verifyToken();
+        if (!verify.ok) {
+            UIHelpers.showToast(`Token 验证失败: ${verify.error}`, 'error');
+            return;
+        }
+        gistStatusText.textContent = `Token 有效 (${verify.user})`;
+        gistStatusText.className = 'text-xs text-blue-600';
+
         const gistId = gistIdEl.value.trim();
         if (gistId) {
-            // 测试现有 gist 是否可访问
+            // 测试现有 gist 是否可访问 + 是否属于当前用户
             try {
-                await githubRequest('GET', `/gists/${gistId}`);
-                setGistId(gistId);
-                UIHelpers.showToast('连接成功', 'success');
+                const gist = await githubRequest('GET', `/gists/${gistId}`);
+                if (gist.owner && gist.owner.login !== verify.user) {
+                    UIHelpers.showToast(
+                        `警告: 这个 Gist 属于 ${gist.owner.login}，不是你的(${verify.user})。` +
+                        `上传会失败。建议清空 Gist ID 重新创建属于你自己的。`,
+                        'error'
+                    );
+                } else {
+                    setGistId(gistId);
+                    UIHelpers.showToast('连接成功', 'success');
+                }
             } catch (e) {
                 UIHelpers.showToast(`连接失败: ${e.message}`, 'error');
             }
@@ -159,7 +200,6 @@ const SyncManager = (() => {
                     public: false,
                     files: {}
                 };
-                // 初始内容：空的同步结构
                 payload.files[GIST_FILENAME] = {
                     content: JSON.stringify({
                         updatedAt: new Date().toISOString(),
@@ -169,7 +209,7 @@ const SyncManager = (() => {
                 const result = await githubRequest('POST', '/gists', payload);
                 setGistId(result.id);
                 gistIdEl.value = result.id;
-                UIHelpers.showToast(`Gist 创建成功 (${result.id.slice(0, 8)}…)`, 'success');
+                UIHelpers.showToast(`Gist 创建成功 (${result.id.slice(0, 8)}…`, 'success');
             } catch (e) {
                 UIHelpers.showToast(`创建失败: ${e.message}`, 'error');
             }
