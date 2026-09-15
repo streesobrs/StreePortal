@@ -1125,14 +1125,156 @@
                         <div class="settings-tab hidden" id="sync-tab">
                             <h2 class="text-xl font-bold text-gray-800 mb-6 transition-colors duration-300">同步设置</h2>
 
-                            <div class="space-y-6">
+                            <!-- ====== GitHub Gist 云端同步 ====== -->
+                            <div class="mb-8">
+                                <h3 class="font-medium text-gray-700 mb-4 flex items-center gap-2">
+                                    <i class="fa fa-github text-lg"></i>
+                                    GitHub Gist 云端同步
+                                    <span id="gist-connected-badge"
+                                        class="hidden text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">已连接</span>
+                                </h3>
+
+                                <div class="bg-gray-50 p-4 rounded-lg space-y-4 transition-colors duration-300">
+                                    <!-- GitHub Token -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-1">Personal Access
+                                            Token</label>
+                                        <input type="password" id="gist-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm font-mono">
+                                        <p class="text-xs text-gray-400 mt-1">
+                                            生成地址:
+                                            <a href="https://github.com/settings/tokens/new?description=StreePortal&scopes=gist"
+                                                target="_blank" class="text-primary hover:underline">
+                                                github.com/settings/tokens
+                                            </a>
+                                            只需勾选 <code class="bg-gray-200 px-1 rounded">gist</code> 权限
+                                        </p>
+                                    </div>
+
+                                    <!-- Gist ID（可选） -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-600 mb-1">Gist ID <span
+                                                class="text-gray-400">(可选，首次会自动创建)</span></label>
+                                        <input type="text" id="gist-id" placeholder="留空则首次连接时自动创建"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm font-mono">
+                                    </div>
+
+                                    <!-- 连接操作按钮 -->
+                                    <div class="flex gap-2 flex-wrap">
+                                        <button id="gist-connect-btn"
+                                            class="px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors text-sm">
+                                            <i class="fa fa-plug mr-1"></i>连接 / 创建
+                                        </button>
+                                        <button id="gist-push-btn" disabled
+                                            class="px-4 py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <i class="fa fa-cloud-upload mr-1"></i>上传到云端
+                                        </button>
+                                        <button id="gist-pull-btn" disabled
+                                            class="px-4 py-2 bg-secondary text-white font-medium rounded-lg hover:bg-secondary/90 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <i class="fa fa-cloud-download mr-1"></i>从云端拉取
+                                        </button>
+                                        <button id="gist-disconnect-btn" disabled
+                                            class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <i class="fa fa-unlink mr-1"></i>断开
+                                        </button>
+                                    </div>
+
+                                    <p class="text-xs text-gray-400" id="gist-status-text">
+                                        未连接 —— 输入 Token 后点击"连接 / 创建"开始使用云端同步
+                                    </p>
+                                </div>
+
+                                <!-- 使用教程折叠区 -->
+                                <div class="mt-4">
+                                    <button id="gist-tutorial-toggle"
+                                        class="w-full flex items-center justify-between px-4 py-2 text-sm text-primary hover:bg-primary/5 rounded-lg transition-colors">
+                                        <span><i class="fa fa-question-circle mr-1"></i>怎么用？点击查看完整教程</span>
+                                        <i class="fa fa-chevron-down transition-transform duration-200"
+                                            id="gist-tutorial-chevron"></i>
+                                    </button>
+                                    <div id="gist-tutorial-content"
+                                        class="hidden mt-3 bg-white border border-gray-200 rounded-lg p-5 text-sm text-gray-600 space-y-4">
+                                        <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                                            <i class="fa fa-book text-primary"></i> GitHub Gist 云端同步使用教程
+                                        </h4>
+
+                                        <div>
+                                            <p class="font-medium text-gray-700 mb-1">🎯 这个功能能做什么？</p>
+                                            <p class="text-gray-500">
+                                                把你的便签本、待办事项、密码库等所有数据自动备份到 GitHub 私有 Gist，
+                                                换设备（手机/电脑）打开同一个站点就能**一键恢复**，数据永远不丢。
+                                                全程零成本，纯 GitHub 官方服务。
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <p class="font-medium text-gray-700 mb-1">📋 第一步：生成 GitHub Token（只需做一次）</p>
+                                            <ol class="list-decimal list-inside space-y-1 text-gray-500 pl-1">
+                                                <li>打开 <a
+                                                        href="https://github.com/settings/tokens/new?description=StreePortal&scopes=gist"
+                                                        target="_blank" class="text-primary underline">这个链接</a>（会自动勾选好
+                                                    gist 权限）</li>
+                                                <li>确认下方只有 <code class="bg-gray-100 px-1 rounded text-xs">gist</code>
+                                                    一项被勾选，描述随便写</li>
+                                                <li>滚动到底部点绿色按钮 <span class="text-green-600 font-medium">"Generate
+                                                        token"</span></li>
+                                                <li><strong class="text-red-500">立即复制</strong>生成的 Token（只显示一次，刷新就没了）
+                                                </li>
+                                            </ol>
+                                        </div>
+
+                                        <div>
+                                            <p class="font-medium text-gray-700 mb-1">🔑 第二步：在 StreePortal 中连接</p>
+                                            <ol class="list-decimal list-inside space-y-1 text-gray-500 pl-1">
+                                                <li>把复制的 Token 粘贴到上方 "Personal Access Token" 输入框</li>
+                                                <li>"Gist ID" 留空 → 点 <span class="text-primary font-medium">"连接 /
+                                                        创建"</span></li>
+                                                <li>等待几秒钟，看到绿色 "已连接" 徽章就成功了！</li>
+                                                <li class="text-gray-400"><i
+                                                        class="fa fa-info-circle mr-1"></i>系统会自动创建一个<strong>私有</strong>
+                                                    Gist 来存数据，别人看不到</li>
+                                            </ol>
+                                        </div>
+
+                                        <div>
+                                            <p class="font-medium text-gray-700 mb-1">💾 第三步：日常使用</p>
+                                            <ul class="list-disc list-inside space-y-1 text-gray-500 pl-1">
+                                                <li>导航栏那个 <i class="fa fa-cloud text-gray-600"></i> 云朵图标 =
+                                                    <strong>一键上传</strong>当前数据</li>
+                                                <li>勾选 "自动同步" + 选择频率，站点会定期自动备份</li>
+                                                <li>换设备时：粘贴同样的 Token + Gist ID → 点 <span
+                                                        class="text-secondary font-medium">"从云端拉取"</span></li>
+                                                <li>Gist ID 在连接成功后会自动填入，也可以在 GitHub 的 <a href="https://gist.github.com/"
+                                                        target="_blank" class="text-primary underline">Gist 首页</a> 找到
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-3">
+                                            <p class="font-medium text-yellow-800 text-sm flex items-center gap-1">
+                                                <i class="fa fa-shield"></i> 安全小贴士
+                                            </p>
+                                            <ul class="text-xs text-yellow-700 mt-1 space-y-0.5">
+                                                <li>• Token 只保存在你本地浏览器，不会发送到任何其他服务器</li>
+                                                <li>• 只给了 gist 一个权限，即使泄露也只能读写你的 Gist，拿不到代码或仓库</li>
+                                                <li>• 想停用？去 GitHub Settings → Developer settings → Personal access
+                                                    tokens 里点删除即可</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ====== 自动同步 ====== -->
+                            <div class="space-y-6 pt-4 border-t border-gray-200 transition-colors duration-300">
                                 <div class="setting-item">
                                     <div>
                                         <h3 class="font-medium text-gray-800 transition-colors duration-300">自动同步</h3>
-                                        <p class="text-sm text-gray-500 transition-colors duration-300">定期自动同步数据</p>
+                                        <p class="text-sm text-gray-500 transition-colors duration-300">
+                                            启用后会定期将数据上传到云端（需先连接 Gist）</p>
                                     </div>
                                     <label class="inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" id="auto-sync" class="sr-only peer" checked>
+                                        <input type="checkbox" id="auto-sync" class="sr-only peer">
                                         <div
                                             class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary">
                                         </div>
@@ -1150,14 +1292,13 @@
                                         <option value="15">15分钟</option>
                                         <option value="30" selected>30分钟</option>
                                         <option value="60">1小时</option>
-                                        <option value="1440">每天</option>
                                     </select>
                                 </div>
 
                                 <div class="setting-item">
                                     <div>
                                         <h3 class="font-medium text-gray-800 transition-colors duration-300">同步时通知</h3>
-                                        <p class="text-sm text-gray-500 transition-colors duration-300">同步完成后显示通知</p>
+                                        <p class="text-sm text-gray-500 transition-colors duration-300">同步完成后显示提示</p>
                                     </div>
                                     <label class="inline-flex items-center cursor-pointer">
                                         <input type="checkbox" id="sync-notifications" class="sr-only peer" checked>
@@ -1167,14 +1308,9 @@
                                     </label>
                                 </div>
 
-                                <div class="pt-4 border-t border-gray-200 transition-colors duration-300">
-                                    <button id="manual-sync-btn"
-                                        class="px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors">
-                                        <i class="fa fa-refresh mr-2"></i>立即同步
-                                    </button>
-                                    <p class="text-sm text-gray-500 mt-2 transition-colors duration-300">上次同步: <span
-                                            id="last-sync-time">从未同步</span></p>
-                                </div>
+                                <p class="text-sm text-gray-500 mt-2 transition-colors duration-300">
+                                    上次同步: <span id="last-sync-time">从未同步</span>
+                                </p>
                             </div>
                         </div>
 
