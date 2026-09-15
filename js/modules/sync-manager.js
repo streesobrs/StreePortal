@@ -28,6 +28,7 @@ const SyncManager = (() => {
 
     // 定时器 id
     let autoSyncTimer = null;
+    let isSyncing = false;  // 并发锁
 
     // ===== 初始化 =====
     function init() {
@@ -342,6 +343,9 @@ const SyncManager = (() => {
     // 推送数据到 Gist
     async function pushToGist(silent) {
         if (!isConnected()) return;
+        if (isSyncing) return;  // 并发锁：防止重复调用
+        isSyncing = true;
+
         gistPushBtn.disabled = true;
         const originalText = gistPushBtn.innerHTML;
         gistPushBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i>上传中...';
@@ -365,8 +369,9 @@ const SyncManager = (() => {
         } catch (e) {
             UIHelpers.showToast(`上传失败: ${e.message}`, 'error');
         } finally {
-            gistPushBtn.disabled = false;
-            gistPushBtn.innerHTML = originalText;
+            isSyncing = false;
+            try { gistPushBtn.disabled = false; } catch { }
+            try { gistPushBtn.innerHTML = originalText; } catch { }
         }
     }
 
