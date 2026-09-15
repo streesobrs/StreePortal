@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二维码生成器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        danger: '#EF4444',
+                        dark: '#1F2937',
+                        light: '#F3F4F6'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style>
+        .dark body {
+            background-color: rgb(17 24 39);
+            color: rgb(243 244 246);
+        }
+
+        .dark .bg-white {
+            background-color: rgb(31 41 55);
+        }
+
+        .dark .bg-gray-50 {
+            background-color: rgb(31 41 55);
+        }
+
+        .dark .text-dark {
+            color: rgb(243 244 246);
+        }
+
+        .dark .text-gray-600 {
+            color: rgb(209 213 219);
+        }
+
+        .dark .text-gray-500 {
+            color: rgb(156 163 175);
+        }
+
+        .dark .border-gray-200 {
+            border-color: rgb(55 65 81);
+        }
+
+        .dark .bg-gray-200 {
+            background-color: rgb(55 65 81);
+        }
+
+        .dark .hover:bg-gray-200:hover {
+            background-color: rgb(65 75 92);
+        }
+
+        .dark .bg-gray-100 {
+            background-color: rgb(55 65 81);
+        }
+
+        #qrcode img,
+        #qrcode canvas {
+            margin: 0 auto;
+            border-radius: 0.5rem;
+        }
+
+        .color-input-wrapper input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        .color-input-wrapper input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .color-input-wrapper input[type="color"]::-webkit-color-swatch {
+            border: 2px solid rgb(209 213 219);
+            border-radius: 0.375rem;
+        }
+
+        .dark .color-input-wrapper input[type="color"]::-webkit-color-swatch {
+            border-color: rgb(75 85 99);
+        }
+    </style>
+</head>
+
+<body class="font-inter bg-gray-50 text-dark min-h-screen flex flex-col">
+    <div class="flex-1 flex flex-col max-w-2xl w-full mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-6">
+            <a href="../index.html"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
+                <i class="fa fa-home"></i>
+                <span>返回主页</span>
+            </a>
+            <button id="theme-toggle"
+                class="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                title="切换深色/浅色模式">
+                <i class="fa fa-moon-o dark:hidden"></i>
+                <i class="fa fa-sun-o hidden dark:inline"></i>
+            </button>
+        </div>
+
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-primary mb-2">二维码生成器</h1>
+            <p class="text-gray-600">输入文本或链接，快速生成二维码</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <label class="block text-sm font-medium text-gray-600 mb-2 dark:text-gray-400">输入内容</label>
+                <textarea id="qr-content" rows="3" placeholder="输入文本或 URL，例如：https://example.com"
+                    class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"></textarea>
+            </div>
+
+            <div class="p-6">
+                <div class="mb-6">
+                    <h3 class="text-sm font-medium text-gray-600 mb-3 dark:text-gray-400">二维码尺寸</h3>
+                    <div class="flex gap-3">
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" name="qr-size" value="128" class="hidden peer">
+                            <div
+                                class="text-center py-2 rounded-lg border border-gray-200 peer-checked:border-primary peer-checked:bg-primary/10 transition-colors dark:border-gray-600 peer-checked:dark:bg-primary/20">
+                                <span class="text-sm font-medium">小</span>
+                                <span class="text-xs text-gray-500 block">128px</span>
+                            </div>
+                        </label>
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" name="qr-size" value="200" class="hidden peer" checked>
+                            <div
+                                class="text-center py-2 rounded-lg border border-gray-200 peer-checked:border-primary peer-checked:bg-primary/10 transition-colors dark:border-gray-600 peer-checked:dark:bg-primary/20">
+                                <span class="text-sm font-medium">中</span>
+                                <span class="text-xs text-gray-500 block">200px</span>
+                            </div>
+                        </label>
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" name="qr-size" value="288" class="hidden peer">
+                            <div
+                                class="text-center py-2 rounded-lg border border-gray-200 peer-checked:border-primary peer-checked:bg-primary/10 transition-colors dark:border-gray-600 peer-checked:dark:bg-primary/20">
+                                <span class="text-sm font-medium">大</span>
+                                <span class="text-xs text-gray-500 block">288px</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="text-sm font-medium text-gray-600 mb-3 dark:text-gray-400">颜色设置</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div
+                            class="color-input-wrapper flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+                            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">前景色</label>
+                            <input type="color" id="qr-fg-color" value="#000000" class="w-10 h-10">
+                        </div>
+                        <div
+                            class="color-input-wrapper flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+                            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">背景色</label>
+                            <input type="color" id="qr-bg-color" value="#FFFFFF" class="w-10 h-10">
+                        </div>
+                    </div>
+                </div>
+
+                <button id="generate-btn"
+                    class="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 text-lg font-medium mb-6">
+                    <i class="fa fa-qrcode"></i>
+                    <span>生成二维码</span>
+                </button>
+
+                <div id="qr-display-wrapper" class="hidden">
+                    <div
+                        class="flex justify-center p-6 bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+                        <div id="qrcode"></div>
+                    </div>
+
+                    <div class="flex gap-3 mt-4">
+                        <button id="download-btn"
+                            class="flex-1 py-3 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors flex items-center justify-center gap-2 font-medium">
+                            <i class="fa fa-download"></i>
+                            <span>下载 PNG</span>
+                        </button>
+                        <button id="copy-btn"
+                            class="flex-1 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors flex items-center justify-center gap-2 font-medium">
+                            <i class="fa fa-copy"></i>
+                            <span>复制图片</span>
+                        </button>
+                    </div>
+                    <div id="action-message" class="mt-3 text-sm text-center hidden">
+                        <i class="fa fa-check-circle text-secondary"></i>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+            <p>输入任何文本、URL、电话号码等，即可快速生成二维码</p>
+            <p class="mt-1">所有处理均在本地完成，不会上传到任何服务器</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const elements = {
+                qrContent: document.getElementById('qr-content'),
+                generateBtn: document.getElementById('generate-btn'),
+                qrDisplayWrapper: document.getElementById('qr-display-wrapper'),
+                qrcode: document.getElementById('qrcode'),
+                downloadBtn: document.getElementById('download-btn'),
+                copyBtn: document.getElementById('copy-btn'),
+                actionMessage: document.getElementById('action-message'),
+                themeToggle: document.getElementById('theme-toggle'),
+                fgColor: document.getElementById('qr-fg-color'),
+                bgColor: document.getElementById('qr-bg-color')
+            };
+
+            let currentQRCode = null;
+
+            function init() {
+                const savedTheme = localStorage.getItem('qrcode-theme');
+                if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                }
+
+                elements.themeToggle.addEventListener('click', () => {
+                    document.documentElement.classList.toggle('dark');
+                    const isDark = document.documentElement.classList.contains('dark');
+                    localStorage.setItem('qrcode-theme', isDark ? 'dark' : 'light');
+                });
+
+                elements.generateBtn.addEventListener('click', generateQRCode);
+                elements.downloadBtn.addEventListener('click', downloadQRCode);
+                elements.copyBtn.addEventListener('click', copyQRCode);
+
+                elements.qrContent.addEventListener('keydown', (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                        generateQRCode();
+                    }
+                });
+            }
+
+            function getSelectedSize() {
+                const selected = document.querySelector('input[name="qr-size"]:checked');
+                return selected ? parseInt(selected.value) : 200;
+            }
+
+            function generateQRCode() {
+                const text = elements.qrContent.value.trim();
+
+                if (!text) {
+                    showMessage('请输入要生成二维码的内容', false);
+                    return;
+                }
+
+                elements.qrcode.innerHTML = '';
+                elements.qrDisplayWrapper.classList.remove('hidden');
+
+                const size = getSelectedSize();
+                const fgColor = elements.fgColor.value;
+                const bgColor = elements.bgColor.value;
+
+                currentQRCode = new QRCode(elements.qrcode, {
+                    text: text,
+                    width: size,
+                    height: size,
+                    colorDark: fgColor,
+                    colorLight: bgColor,
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+
+                showMessage('二维码生成成功！', true);
+            }
+
+            function getQRCodeCanvas() {
+                const canvas = elements.qrcode.querySelector('canvas');
+                if (canvas) return canvas;
+
+                const img = elements.qrcode.querySelector('img');
+                if (img) {
+                    const c = document.createElement('canvas');
+                    c.width = img.width;
+                    c.height = img.height;
+                    const ctx = c.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    return c;
+                }
+                return null;
+            }
+
+            function downloadQRCode() {
+                const canvas = getQRCodeCanvas();
+                if (!canvas) {
+                    showMessage('请先生成二维码', false);
+                    return;
+                }
+
+                const link = document.createElement('a');
+                link.download = 'qrcode-' + Date.now() + '.png';
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showMessage('二维码已下载！', true);
+            }
+
+            async function copyQRCode() {
+                const canvas = getQRCodeCanvas();
+                if (!canvas) {
+                    showMessage('请先生成二维码', false);
+                    return;
+                }
+
+                try {
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                    if (blob) {
+                        await navigator.clipboard.write([
+                            new ClipboardItem({ 'image/png': blob })
+                        ]);
+                        showMessage('二维码已复制到剪贴板！', true);
+                    } else {
+                        showMessage('复制失败，请尝试下载', false);
+                    }
+                } catch (err) {
+                    console.error('复制失败:', err);
+                    showMessage('复制失败，请尝试下载', false);
+                }
+            }
+
+            function showMessage(text, success) {
+                elements.actionMessage.classList.remove('hidden', 'text-secondary', 'text-danger');
+                elements.actionMessage.classList.add(success ? 'text-secondary' : 'text-danger');
+                const icon = elements.actionMessage.querySelector('i');
+                icon.className = success ? 'fa fa-check-circle text-secondary' : 'fa fa-exclamation-circle text-danger';
+                elements.actionMessage.querySelector('span').textContent = text;
+
+                setTimeout(() => {
+                    elements.actionMessage.classList.add('hidden');
+                }, 2500);
+            }
+
+            init();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计算器</title>
+    <meta name="description" content="在线计算器 - 支持基础算术运算、正负切换、百分比计算">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧮</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        danger: '#EF4444',
+                        dark: '#1F2937',
+                        light: '#F3F4F6'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .calc-btn {
+                @apply flex items-center justify-center w-16 h-16 rounded-lg text-xl font-medium transition-all duration-200 hover:bg-gray-100 active:bg-gray-200 dark:hover:bg-gray-700 dark:active:bg-gray-600;
+            }
+            .calc-btn-primary {
+                @apply bg-primary text-white hover:bg-primary/90 active:bg-primary/80 dark:hover:bg-primary/90 dark:active:bg-primary/80;
+            }
+            .calc-btn-secondary {
+                @apply bg-gray-200 hover:bg-gray-300 active:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 dark:active:bg-gray-500;
+            }
+        }
+    </style>
+    <style>
+        /* 深色模式支持 */
+        .dark body {
+            background-color: rgb(17 24 39);
+            color: rgb(243 244 246);
+        }
+
+        .dark .bg-white {
+            background-color: rgb(31 41 55);
+        }
+
+        .dark .bg-gray-50 {
+            background-color: rgb(31 41 55);
+        }
+
+        .dark .text-dark {
+            color: rgb(243 244 246);
+        }
+
+        .dark .text-gray-600 {
+            color: rgb(209 213 219);
+        }
+
+        .dark .border-gray-200 {
+            border-color: rgb(55 65 81);
+        }
+    </style>
+</head>
+
+<body class="font-inter bg-gray-50 text-dark min-h-screen flex flex-col">
+    <!-- 主容器 -->
+    <div class="flex-1 flex flex-col max-w-md w-full mx-auto px-4 py-8">
+        <!-- 返回主页按钮 -->
+        <div class="flex justify-start mb-4">
+            <a href="../index.html"
+                class="inline-flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
+                <i class="fa fa-arrow-left"></i>
+                <span>返回主页</span>
+            </a>
+        </div>
+
+        <!-- 标题区域 -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-primary mb-2">计算器</h1>
+            <p class="text-gray-600">基础计算器工具</p>
+        </div>
+
+        <!-- 计算器主体 -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden player-shadow">
+            <!-- 显示屏 -->
+            <div class="p-6 bg-gray-50 border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                <div class="text-right">
+                    <div id="calc-history" class="text-sm text-gray-500 mb-1 dark:text-gray-400 min-h-6"></div>
+                    <div id="calc-display" class="text-4xl font-bold min-h-12">0</div>
+                </div>
+            </div>
+
+            <!-- 按钮区域 -->
+            <div class="p-4 grid grid-cols-4 gap-3">
+                <!-- 第一行 -->
+                <button class="calc-btn calc-btn-secondary" data-value="C">C</button>
+                <button class="calc-btn calc-btn-secondary" data-value="+/-">±</button>
+                <button class="calc-btn calc-btn-secondary" data-value="%">%</button>
+                <button class="calc-btn calc-btn-primary" data-value="/">
+                    <i class="fa fa-divide"></i>
+                </button>
+
+                <!-- 第二行 -->
+                <button class="calc-btn" data-value="7">7</button>
+                <button class="calc-btn" data-value="8">8</button>
+                <button class="calc-btn" data-value="9">9</button>
+                <button class="calc-btn calc-btn-primary" data-value="*">
+                    <i class="fa fa-times"></i>
+                </button>
+
+                <!-- 第三行 -->
+                <button class="calc-btn" data-value="4">4</button>
+                <button class="calc-btn" data-value="5">5</button>
+                <button class="calc-btn" data-value="6">6</button>
+                <button class="calc-btn calc-btn-primary" data-value="-">
+                    <i class="fa fa-minus"></i>
+                </button>
+
+                <!-- 第四行 -->
+                <button class="calc-btn" data-value="1">1</button>
+                <button class="calc-btn" data-value="2">2</button>
+                <button class="calc-btn" data-value="3">3</button>
+                <button class="calc-btn calc-btn-primary" data-value="+" rowspan="2">
+                    <i class="fa fa-plus"></i>
+                </button>
+
+                <!-- 第五行 -->
+                <button class="calc-btn col-span-2" data-value="0">0</button>
+                <button class="calc-btn" data-value=".">.</button>
+                <button class="calc-btn calc-btn-primary" data-value="=">
+                    <i class="fa fa-equals"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 功能说明 -->
+        <div class="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+            <p>支持基础算术运算：加、减、乘、除</p>
+            <p class="mt-1">使用 C 清除，± 切换正负号，% 计算百分比</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM元素
+            const elements = {
+                display: document.getElementById('calc-display'),
+                history: document.getElementById('calc-history'),
+                buttons: document.querySelectorAll('[data-value]')
+            };
+
+            // 计算器状态
+            let currentValue = '0';
+            let previousValue = '';
+            let operator = '';
+            let shouldResetDisplay = false;
+
+            // 初始化
+            function init() {
+                // 绑定按钮事件
+                elements.buttons.forEach(button => {
+                    button.addEventListener('click', handleButtonClick);
+                });
+
+                // 绑定键盘事件
+                document.addEventListener('keydown', handleKeyPress);
+            }
+
+            // 处理按钮点击
+            function handleButtonClick(e) {
+                const value = e.target.dataset.value;
+                handleInput(value);
+            }
+
+            // 处理键盘输入
+            function handleKeyPress(e) {
+                const key = e.key;
+
+                // 数字键
+                if (/[0-9]/.test(key)) {
+                    handleInput(key);
+                }
+                // 运算符
+                else if (['+', '-', '*', '/', '%'].includes(key)) {
+                    handleInput(key);
+                }
+                // 等号
+                else if (key === '=' || key === 'Enter') {
+                    handleInput('=');
+                }
+                // 小数点
+                else if (key === '.') {
+                    handleInput('.');
+                }
+                // 清除
+                else if (key === 'Escape' || key === 'c' || key === 'C') {
+                    handleInput('C');
+                }
+                // 退格
+                else if (key === 'Backspace') {
+                    handleBackspace();
+                }
+            }
+
+            // 处理输入
+            function handleInput(value) {
+                // 数字和小数点
+                if (/[0-9.]/.test(value)) {
+                    if (currentValue === '0' || shouldResetDisplay) {
+                        currentValue = value === '.' ? '0.' : value;
+                        shouldResetDisplay = false;
+                    } else {
+                        // 防止多个小数点
+                        if (value === '.' && currentValue.includes('.')) {
+                            return;
+                        }
+                        currentValue += value;
+                    }
+                }
+                // 运算符
+                else if (['+', '-', '*', '/', '%'].includes(value)) {
+                    if (previousValue && operator) {
+                        // 计算之前的表达式
+                        calculate();
+                    }
+                    previousValue = currentValue;
+                    operator = value;
+                    shouldResetDisplay = true;
+                    elements.history.textContent = `${previousValue} ${operator}`;
+                }
+                // 等号
+                else if (value === '=') {
+                    if (previousValue && operator) {
+                        calculate();
+                        elements.history.textContent = '';
+                    }
+                }
+                // 清除
+                else if (value === 'C') {
+                    currentValue = '0';
+                    previousValue = '';
+                    operator = '';
+                    elements.history.textContent = '';
+                }
+                // 正负号
+                else if (value === '+/-') {
+                    currentValue = currentValue.startsWith('-')
+                        ? currentValue.substring(1)
+                        : '-' + currentValue;
+                }
+
+                // 更新显示
+                updateDisplay();
+            }
+
+            // 处理退格
+            function handleBackspace() {
+                if (currentValue.length > 1) {
+                    currentValue = currentValue.substring(0, currentValue.length - 1);
+                } else {
+                    currentValue = '0';
+                }
+                updateDisplay();
+            }
+
+            // 计算
+            function calculate() {
+                let result;
+                const num1 = parseFloat(previousValue);
+                const num2 = parseFloat(currentValue);
+
+                try {
+                    switch (operator) {
+                        case '+':
+                            result = num1 + num2;
+                            break;
+                        case '-':
+                            result = num1 - num2;
+                            break;
+                        case '*':
+                            result = num1 * num2;
+                            break;
+                        case '/':
+                            if (num2 === 0) {
+                                result = '错误';
+                            } else {
+                                result = num1 / num2;
+                            }
+                            break;
+                        case '%':
+                            result = num1 * (num2 / 100);
+                            break;
+                        default:
+                            return;
+                    }
+
+                    // 处理结果
+                    if (typeof result === 'number') {
+                        // 限制小数位数
+                        result = result.toFixed(10).replace(/\.?0+$/, '');
+                    }
+
+                    currentValue = result.toString();
+                    previousValue = '';
+                    operator = '';
+                    shouldResetDisplay = true;
+                } catch (error) {
+                    currentValue = '错误';
+                }
+            }
+
+            // 更新显示
+            function updateDisplay() {
+                elements.display.textContent = currentValue;
+            }
+
+            // 初始化计算器
+            init();
+        });
+    </script>
+</body>
+
+</html>

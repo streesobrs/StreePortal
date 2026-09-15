@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>待办事项</title>
+    <meta name="description" content="待办事项管理器 - 创建、编辑、完成任务，数据本地保存">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        danger: '#EF4444',
+                        dark: '#1F2937',
+                        light: '#F3F4F6'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .todo-item-enter {
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            .todo-item-exit {
+                animation: fadeOut 0.3s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            @keyframes fadeOut {
+                from {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+            }
+        }
+    </style>
+    <style>
+        /* 深色模式支持 */
+        .dark body {
+            background-color: rgb(17 24 39);
+            color: rgb(243 244 246);
+        }
+
+        .dark .bg-white {
+            background-color: rgb(31 41 55);
+        }
+
+        .dark .bg-gray-50 {
+            background-color: rgb(31 41 55);
+        }
+
+        .dark .bg-gray-100 {
+            background-color: rgb(45 55 72);
+        }
+
+        .dark .text-dark {
+            color: rgb(243 244 246);
+        }
+
+        .dark .text-gray-600 {
+            color: rgb(209 213 219);
+        }
+
+        .dark .text-gray-500 {
+            color: rgb(156 163 175);
+        }
+
+        .dark .border-gray-200 {
+            border-color: rgb(55 65 81);
+        }
+
+        .dark .bg-gray-200 {
+            background-color: rgb(55 65 81);
+        }
+
+        .dark .hover:bg-gray-200:hover {
+            background-color: rgb(65 75 92);
+        }
+
+        /* 自定义滚动条 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(229, 231, 235, 0.5);
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5);
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.7);
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(55, 65, 81, 0.5);
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5);
+        }
+    </style>
+</head>
+
+<body class="font-inter bg-gray-50 text-dark min-h-screen flex flex-col">
+    <!-- 主容器 -->
+    <div class="flex-1 flex flex-col max-w-2xl w-full mx-auto px-4 py-8">
+        <!-- 返回主页按钮 -->
+        <div class="flex justify-start mb-4">
+            <a href="../index.html"
+                class="inline-flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
+                <i class="fa fa-arrow-left"></i>
+                <span>返回主页</span>
+            </a>
+        </div>
+
+        <!-- 标题区域 -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-primary mb-2">待办事项</h1>
+            <p class="text-gray-600">管理你的任务清单</p>
+        </div>
+
+        <!-- 待办事项主体 -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden player-shadow">
+            <!-- 添加任务区域 -->
+            <div class="p-6 border-b border-gray-200">
+                <form id="add-todo-form" class="flex gap-3">
+                    <input type="text" id="todo-input" placeholder="输入新任务..."
+                        class="flex-1 px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <button type="submit"
+                        class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
+                        <i class="fa fa-plus"></i>
+                        <span>添加</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- 任务列表 -->
+            <div id="todo-list" class="p-4 max-h-96 overflow-y-auto custom-scrollbar">
+                <!-- 空状态 -->
+                <div id="empty-state" class="text-center py-12">
+                    <i class="fa fa-check-circle text-4xl text-gray-300 mb-3"></i>
+                    <p class="text-gray-500">暂无待办事项</p>
+                    <p class="text-sm text-gray-400 mt-1">添加你的第一个任务</p>
+                </div>
+
+                <!-- 任务列表将通过JS动态生成 -->
+            </div>
+
+            <!-- 底部统计 -->
+            <div class="p-4 border-t border-gray-200 flex justify-between items-center">
+                <span id="todo-count" class="text-sm text-gray-600 dark:text-gray-400">0 个任务</span>
+                <button id="clear-completed"
+                    class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+                    <i class="fa fa-trash"></i>
+                    <span>清除已完成</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 功能说明 -->
+        <div class="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+            <p>点击任务标记为完成，双击编辑任务，点击删除按钮删除任务</p>
+            <p class="mt-1">任务将保存在本地，刷新页面后仍然存在</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM元素
+            const elements = {
+                form: document.getElementById('add-todo-form'),
+                input: document.getElementById('todo-input'),
+                todoList: document.getElementById('todo-list'),
+                emptyState: document.getElementById('empty-state'),
+                todoCount: document.getElementById('todo-count'),
+                clearCompleted: document.getElementById('clear-completed')
+            };
+
+            // 任务列表
+            let todos = [];
+
+            // 初始化
+            function init() {
+                // 从本地存储加载任务
+                loadTodos();
+
+                // 绑定事件
+                elements.form.addEventListener('submit', handleAddTodo);
+                elements.clearCompleted.addEventListener('click', handleClearCompleted);
+
+                // 渲染任务列表
+                renderTodos();
+            }
+
+            // 从本地存储加载任务
+            function loadTodos() {
+                const savedTodos = localStorage.getItem('todos');
+                if (savedTodos) {
+                    todos = JSON.parse(savedTodos);
+                }
+            }
+
+            // 保存任务到本地存储
+            function saveTodos() {
+                localStorage.setItem('todos', JSON.stringify(todos));
+            }
+
+            // 处理添加任务
+            function handleAddTodo(e) {
+                e.preventDefault();
+
+                const text = elements.input.value.trim();
+                if (text) {
+                    const newTodo = {
+                        id: Date.now(),
+                        text,
+                        completed: false
+                    };
+
+                    todos.push(newTodo);
+                    saveTodos();
+                    renderTodos();
+                    elements.input.value = '';
+                }
+            }
+
+            // 处理切换任务状态
+            function handleToggleTodo(id) {
+                todos = todos.map(todo =>
+                    todo.id === id ? { ...todo, completed: !todo.completed } : todo
+                );
+                saveTodos();
+                renderTodos();
+            }
+
+            // 处理编辑任务
+            function handleEditTodo(id, newText) {
+                todos = todos.map(todo =>
+                    todo.id === id ? { ...todo, text: newText } : todo
+                );
+                saveTodos();
+                renderTodos();
+            }
+
+            // 处理删除任务
+            function handleDeleteTodo(id) {
+                todos = todos.filter(todo => todo.id !== id);
+                saveTodos();
+                renderTodos();
+            }
+
+            // 处理清除已完成任务
+            function handleClearCompleted() {
+                todos = todos.filter(todo => !todo.completed);
+                saveTodos();
+                renderTodos();
+            }
+
+            // 渲染任务列表
+            function renderTodos() {
+                // 更新任务计数
+                elements.todoCount.textContent = `${todos.length} 个任务`;
+
+                // 显示/隐藏空状态
+                if (todos.length === 0) {
+                    elements.emptyState.classList.remove('hidden');
+                    elements.todoList.classList.add('flex', 'items-center', 'justify-center');
+                } else {
+                    elements.emptyState.classList.add('hidden');
+                    elements.todoList.classList.remove('flex', 'items-center', 'justify-center');
+                }
+
+                // 渲染任务
+                elements.todoList.innerHTML = todos.map(todo => `
+                    <div class="todo-item todo-item-enter flex items-center gap-3 p-3 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors rounded-lg">
+                        <button class="todo-toggle w-6 h-6 rounded-full border-2 flex items-center justify-center ${todo.completed ? 'bg-primary border-primary' : 'border-gray-300 dark:border-gray-600'}" data-id="${todo.id}">
+                            ${todo.completed ? '<i class="fa fa-check text-white text-xs"></i>' : ''}
+                        </button>
+                        <div class="flex-1 min-w-0">
+                            <p class="todo-text ${todo.completed ? 'line-through text-gray-500 dark:text-gray-400' : ''}" data-id="${todo.id}">${todo.text}</p>
+                        </div>
+                        <button class="todo-delete text-gray-400 hover:text-danger transition-colors p-2" data-id="${todo.id}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                `).join('');
+
+                // 绑定事件
+                bindTodoEvents();
+            }
+
+            // 绑定任务事件
+            function bindTodoEvents() {
+                // 切换任务状态
+                document.querySelectorAll('.todo-toggle').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const id = parseInt(btn.dataset.id);
+                        handleToggleTodo(id);
+                    });
+                });
+
+                // 编辑任务
+                document.querySelectorAll('.todo-text').forEach(text => {
+                    text.addEventListener('dblclick', () => {
+                        const id = parseInt(text.dataset.id);
+                        const todo = todos.find(t => t.id === id);
+                        if (todo) {
+                            const newText = prompt('编辑任务:', todo.text);
+                            if (newText && newText.trim()) {
+                                handleEditTodo(id, newText.trim());
+                            }
+                        }
+                    });
+                });
+
+                // 删除任务
+                document.querySelectorAll('.todo-delete').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const id = parseInt(btn.dataset.id);
+                        if (confirm('确定要删除这个任务吗？')) {
+                            handleDeleteTodo(id);
+                        }
+                    });
+                });
+            }
+
+            // 初始化应用
+            init();
+        });
+    </script>
+</body>
+
+</html>

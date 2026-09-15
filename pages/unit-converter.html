@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单位转换器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        danger: '#EF4444',
+                        dark: '#1F2937',
+                        light: '#F3F4F6'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .category-btn {
+                @apply flex items-center gap-3 w-full px-4 py-3 rounded-lg text-left transition-all duration-200 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700;
+            }
+            .category-btn.active {
+                @apply bg-primary/10 text-primary font-medium dark:bg-primary/20;
+            }
+        }
+    </style>
+    <style>
+        .dark body {
+            background-color: rgb(17 24 39);
+            color: rgb(243 244 246);
+        }
+
+        .dark .bg-white {
+            background-color: rgb(31 41 55);
+        }
+
+        .dark .bg-gray-50 {
+            background-color: rgb(31 41 55);
+        }
+
+        .dark .text-dark {
+            color: rgb(243 244 246);
+        }
+
+        .dark .text-gray-600 {
+            color: rgb(209 213 219);
+        }
+
+        .dark .text-gray-500 {
+            color: rgb(156 163 175);
+        }
+
+        .dark .border-gray-200 {
+            border-color: rgb(55 65 81);
+        }
+
+        .dark .bg-gray-100 {
+            background-color: rgb(55 65 81);
+        }
+
+        .dark select option {
+            background-color: rgb(31 41 55);
+            color: rgb(243 244 246);
+        }
+    </style>
+</head>
+
+<body class="font-inter bg-gray-50 text-dark min-h-screen flex flex-col">
+    <div class="flex-1 flex flex-col max-w-4xl w-full mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-6">
+            <a href="../index.html" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-primary transition-colors dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700">
+                <i class="fa fa-arrow-left"></i>
+                <span>返回主页</span>
+            </a>
+            <div class="flex items-center gap-2">
+                <button id="theme-toggle" class="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-primary transition-colors dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700">
+                    <i class="fa fa-moon-o" id="theme-icon"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-primary mb-2">单位转换器</h1>
+            <p class="text-gray-600">快速转换各种常用单位</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden player-shadow flex flex-col md:flex-row">
+            <div class="md:w-56 border-b md:border-b-0 md:border-r border-gray-200 p-4 bg-gray-50 dark:bg-gray-800">
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 px-2">转换类别</h3>
+                <div class="space-y-1" id="category-list">
+                    <button class="category-btn active" data-category="length">
+                        <i class="fa fa-ruler"></i>
+                        <span>长度</span>
+                    </button>
+                    <button class="category-btn" data-category="weight">
+                        <i class="fa fa-balance-scale"></i>
+                        <span>重量</span>
+                    </button>
+                    <button class="category-btn" data-category="temperature">
+                        <i class="fa fa-thermometer-half"></i>
+                        <span>温度</span>
+                    </button>
+                    <button class="category-btn" data-category="area">
+                        <i class="fa fa-map-o"></i>
+                        <span>面积</span>
+                    </button>
+                    <button class="category-btn" data-category="volume">
+                        <i class="fa fa-tint"></i>
+                        <span>体积</span>
+                    </button>
+                    <button class="category-btn" data-category="time">
+                        <i class="fa fa-clock-o"></i>
+                        <span>时间</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-2 dark:text-gray-400">
+                            <i class="fa fa-arrow-down text-primary mr-1"></i> 从
+                        </label>
+                        <select id="from-unit" class="w-full px-4 py-2.5 mb-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"></select>
+                        <input type="number" id="from-value" value="1" step="any"
+                            class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-xl font-medium bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-2 dark:text-gray-400">
+                            <i class="fa fa-arrow-up text-secondary mr-1"></i> 到
+                        </label>
+                        <select id="to-unit" class="w-full px-4 py-2.5 mb-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"></select>
+                        <input type="number" id="to-value" step="any" readonly
+                            class="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-xl font-medium text-dark dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-center">
+                    <button id="swap-btn" class="p-3 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors" title="交换单位">
+                        <i class="fa fa-exchange text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-center dark:bg-gray-800 dark:border-gray-700">
+                    <div id="result-text" class="text-gray-600 dark:text-gray-400"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+            <p>选择左侧类别，输入数值即可自动转换</p>
+            <p class="mt-1">支持常用的长度、重量、温度、面积、体积和时间单位</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const elements = {
+                categoryList: document.getElementById('category-list'),
+                fromUnit: document.getElementById('from-unit'),
+                toUnit: document.getElementById('to-unit'),
+                fromValue: document.getElementById('from-value'),
+                toValue: document.getElementById('to-value'),
+                swapBtn: document.getElementById('swap-btn'),
+                resultText: document.getElementById('result-text'),
+                themeToggle: document.getElementById('theme-toggle'),
+                themeIcon: document.getElementById('theme-icon')
+            };
+
+            const categories = {
+                length: {
+                    name: '长度',
+                    units: {
+                        km: { label: '公里 (km)', factor: 1000 },
+                        m: { label: '米 (m)', factor: 1 },
+                        cm: { label: '厘米 (cm)', factor: 0.01 },
+                        mi: { label: '英里 (mi)', factor: 1609.344 },
+                        ft: { label: '英尺 (ft)', factor: 0.3048 },
+                        inch: { label: '英寸 (in)', factor: 0.0254 }
+                    },
+                    defaultFrom: 'km',
+                    defaultTo: 'm'
+                },
+                weight: {
+                    name: '重量',
+                    units: {
+                        kg: { label: '千克 (kg)', factor: 1000 },
+                        g: { label: '克 (g)', factor: 1 },
+                        lb: { label: '磅 (lb)', factor: 453.59237 },
+                        oz: { label: '盎司 (oz)', factor: 28.34952 }
+                    },
+                    defaultFrom: 'kg',
+                    defaultTo: 'g'
+                },
+                temperature: {
+                    name: '温度',
+                    units: {
+                        celsius: { label: '摄氏度 (°C)' },
+                        fahrenheit: { label: '华氏度 (°F)' },
+                        kelvin: { label: '开尔文 (K)' }
+                    },
+                    defaultFrom: 'celsius',
+                    defaultTo: 'fahrenheit'
+                },
+                area: {
+                    name: '面积',
+                    units: {
+                        m2: { label: '平方米 (m²)', factor: 1 },
+                        km2: { label: '平方千米 (km²)', factor: 1000000 },
+                        mi2: { label: '平方英里 (mi²)', factor: 2589988.1103 },
+                        acre: { label: '英亩', factor: 4046.8564 },
+                        ha: { label: '公顷 (ha)', factor: 10000 }
+                    },
+                    defaultFrom: 'km2',
+                    defaultTo: 'm2'
+                },
+                volume: {
+                    name: '体积',
+                    units: {
+                        l: { label: '升 (L)', factor: 1 },
+                        ml: { label: '毫升 (mL)', factor: 0.001 },
+                        gal: { label: '加仑 (gal)', factor: 3.785411784 }
+                    },
+                    defaultFrom: 'l',
+                    defaultTo: 'ml'
+                },
+                time: {
+                    name: '时间',
+                    units: {
+                        s: { label: '秒 (s)', factor: 1 },
+                        min: { label: '分钟 (min)', factor: 60 },
+                        h: { label: '小时 (h)', factor: 3600 },
+                        day: { label: '天 (day)', factor: 86400 }
+                    },
+                    defaultFrom: 'h',
+                    defaultTo: 'min'
+                }
+            };
+
+            let currentCategory = 'length';
+
+            function init() {
+                loadTheme();
+                setupCategories();
+                populateUnits();
+                bindEvents();
+                convert();
+            }
+
+            function setupCategories() {
+                elements.categoryList.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.category-btn');
+                    if (!btn) return;
+                    const cat = btn.dataset.category;
+                    if (cat === currentCategory) return;
+
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentCategory = cat;
+                    populateUnits();
+                    convert();
+                });
+            }
+
+            function populateUnits() {
+                const cat = categories[currentCategory];
+                const unitKeys = Object.keys(cat.units);
+
+                elements.fromUnit.innerHTML = '';
+                elements.toUnit.innerHTML = '';
+
+                unitKeys.forEach(key => {
+                    const opt1 = document.createElement('option');
+                    opt1.value = key;
+                    opt1.textContent = cat.units[key].label;
+                    elements.fromUnit.appendChild(opt1);
+
+                    const opt2 = document.createElement('option');
+                    opt2.value = key;
+                    opt2.textContent = cat.units[key].label;
+                    elements.toUnit.appendChild(opt2);
+                });
+
+                elements.fromUnit.value = cat.defaultFrom;
+                elements.toUnit.value = cat.defaultTo;
+            }
+
+            function convertTemperature(value, from, to) {
+                if (from === to) return value;
+
+                let celsius;
+                if (from === 'celsius') celsius = value;
+                else if (from === 'fahrenheit') celsius = (value - 32) * 5 / 9;
+                else if (from === 'kelvin') celsius = value - 273.15;
+
+                if (to === 'celsius') return celsius;
+                else if (to === 'fahrenheit') return celsius * 9 / 5 + 32;
+                else if (to === 'kelvin') return celsius + 273.15;
+            }
+
+            function convert() {
+                const value = parseFloat(elements.fromValue.value);
+                if (isNaN(value)) {
+                    elements.toValue.value = '';
+                    elements.resultText.textContent = '';
+                    return;
+                }
+
+                const fromUnit = elements.fromUnit.value;
+                const toUnit = elements.toUnit.value;
+                let result;
+
+                if (currentCategory === 'temperature') {
+                    result = convertTemperature(value, fromUnit, toUnit);
+                } else {
+                    const cat = categories[currentCategory];
+                    const baseValue = value * cat.units[fromUnit].factor;
+                    result = baseValue / cat.units[toUnit].factor;
+                }
+
+                const displayResult = formatResult(result);
+                elements.toValue.value = displayResult;
+
+                const cat = categories[currentCategory];
+                const fromLabel = cat.units[fromUnit].label.replace(/\s*\(.*?\)/, '');
+                const toLabel = cat.units[toUnit].label.replace(/\s*\(.*?\)/, '');
+                elements.resultText.textContent = `${formatResult(value)} ${fromLabel} = ${displayResult} ${toLabel}`;
+            }
+
+            function formatResult(num) {
+                if (num === 0) return '0';
+                if (Math.abs(num) >= 1e12 || (Math.abs(num) < 1e-6 && num !== 0)) {
+                    return num.toExponential(6);
+                }
+                const fixed = num.toFixed(10);
+                return fixed.replace(/\.?0+$/, '');
+            }
+
+            function bindEvents() {
+                elements.fromValue.addEventListener('input', convert);
+                elements.fromUnit.addEventListener('change', convert);
+                elements.toUnit.addEventListener('change', convert);
+                elements.swapBtn.addEventListener('click', () => {
+                    const fromVal = elements.fromUnit.value;
+                    const toVal = elements.toUnit.value;
+                    elements.fromUnit.value = toVal;
+                    elements.toUnit.value = fromVal;
+
+                    const toNum = elements.toValue.value;
+                    if (toNum && !isNaN(toNum)) {
+                        elements.fromValue.value = toNum;
+                    }
+                    convert();
+                });
+
+                elements.themeToggle.addEventListener('click', toggleTheme);
+            }
+
+            function toggleTheme() {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                updateThemeIcon(isDark);
+            }
+
+            function loadTheme() {
+                const saved = localStorage.getItem('theme');
+                const isDark = saved === 'dark' ||
+                    (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                }
+                updateThemeIcon(isDark);
+            }
+
+            function updateThemeIcon(isDark) {
+                if (isDark) {
+                    elements.themeIcon.className = 'fa fa-sun-o';
+                } else {
+                    elements.themeIcon.className = 'fa fa-moon-o';
+                }
+            }
+
+            init();
+        });
+    </script>
+</body>
+
+</html>

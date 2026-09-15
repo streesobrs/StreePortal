@@ -5,6 +5,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>二维码安全警告</title>
+  <meta name="description" content="经典音乐欣赏页面">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -16,7 +21,8 @@
       background-color: #000;
       color: #fff;
       font-family: Arial, sans-serif;
-      overflow-y: scroll; /* 允许垂直滚动 */
+      overflow-y: scroll;
+      /* 允许垂直滚动 */
     }
 
     .video-container {
@@ -103,14 +109,21 @@
     }
   </style>
 </head>
-    
+
 <body>
   <div class="video-container">
     <!-- 替换为实际国内可访问的视频嵌入地址，比如 B 站的正确视频 iframe 代码 -->
-    <iframe src="https://player.bilibili.com/player.html?bvid=BV1GJ411x7h7"
-      allowfullscreen="allowfullscreen"></iframe>
+    <iframe src="https://player.bilibili.com/player.html?bvid=BV1GJ411x7h7" allowfullscreen="allowfullscreen"></iframe>
   </div>
   <div class="content">
+    <!-- 返回主页按钮 -->
+    <div class="flex justify-start mb-4">
+      <a href="../index.html"
+        class="inline-flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
+        <i class="fa fa-arrow-left"></i>
+        <span>返回主页</span>
+      </a>
+    </div>
     <h1>不是哥们<br><span style="color: #e53e3e;">二维码不能乱扫啊！！！</span></h1>
     <div class="warning-box">
       <h2>乱扫二维码 = 被鬼畜支配！</h2>

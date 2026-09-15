@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>便签本</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        danger: '#EF4444',
+                        dark: '#1F2937',
+                        light: '#F3F4F6',
+                        noteYellow: '#FEF3C7',
+                        notePink: '#FBCFE8',
+                        noteGreen: '#BBF7D0',
+                        noteBlue: '#BFDBFE',
+                        notePurple: '#E9D5FF',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .scrollbar-custom {
+                -ms-overflow-style: none;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(59, 130, 246, 0.5) rgba(229, 231, 235, 0.5);
+            }
+            .scrollbar-custom::-webkit-scrollbar {
+                width: 6px;
+            }
+            .scrollbar-custom::-webkit-scrollbar-track {
+                background: rgba(229, 231, 235, 0.5);
+                border-radius: 3px;
+            }
+            .scrollbar-custom::-webkit-scrollbar-thumb {
+                background: rgba(59, 130, 246, 0.5);
+                border-radius: 3px;
+            }
+            .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+                background: rgba(59, 130, 246, 0.7);
+            }
+            .dark .scrollbar-custom {
+                scrollbar-color: rgba(59, 130, 246, 0.5) rgba(55, 65, 81, 0.5);
+            }
+            .dark .scrollbar-custom::-webkit-scrollbar-track {
+                background: rgba(55, 65, 81, 0.5);
+            }
+            .dark .scrollbar-custom::-webkit-scrollbar-thumb {
+                background: rgba(59, 130, 246, 0.5);
+            }
+            .dark .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+                background: rgba(59, 130, 246, 0.7);
+            }
+            .gradient-bg {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+            .player-shadow {
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                transition: all 0.3s ease;
+            }
+            .player-shadow:hover {
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            }
+            .glass-effect {
+                backdrop-filter: blur(10px);
+                background: rgba(255, 255, 255, 0.8);
+            }
+            .dark .glass-effect {
+                background: rgba(31, 41, 55, 0.8);
+            }
+        }
+    </style>
+    <style>
+        .dark body {
+            background-color: rgb(17 24 39);
+            color: rgb(243 244 246);
+        }
+
+        .dark .bg-white {
+            background-color: rgb(31 41 55);
+        }
+
+        .dark .bg-gray-50 {
+            background-color: rgb(31 41 55);
+        }
+
+        .dark .bg-gray-100 {
+            background-color: rgb(45 55 72);
+        }
+
+        .dark .text-dark {
+            color: rgb(243 244 246);
+        }
+
+        .dark .text-gray-600 {
+            color: rgb(209 213 219);
+        }
+
+        .dark .text-gray-500 {
+            color: rgb(156 163 175);
+        }
+
+        .dark .border-gray-200 {
+            border-color: rgb(55 65 81);
+        }
+
+        .dark .bg-gray-200 {
+            background-color: rgb(55 65 81);
+        }
+
+        .dark .hover:bg-gray-200:hover {
+            background-color: rgb(65 75 92);
+        }
+
+        .note-card {
+            position: absolute;
+            width: 240px;
+            min-height: 200px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .note-card:hover {
+            box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.2), 0 10px 15px -5px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+            z-index: 10;
+        }
+
+        .note-card.dragging {
+            opacity: 0.85;
+            z-index: 9999;
+            transform: scale(1.02);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+        }
+
+        .note-yellow {
+            background-color: #FEF3C7;
+        }
+
+        .note-pink {
+            background-color: #FBCFE8;
+        }
+
+        .note-green {
+            background-color: #BBF7D0;
+        }
+
+        .note-blue {
+            background-color: #BFDBFE;
+        }
+
+        .note-purple {
+            background-color: #E9D5FF;
+        }
+
+        .dark .note-yellow {
+            background-color: #92400E;
+            color: #FEF3C7;
+        }
+
+        .dark .note-pink {
+            background-color: #9D174D;
+            color: #FBCFE8;
+        }
+
+        .dark .note-green {
+            background-color: #065F46;
+            color: #BBF7D0;
+        }
+
+        .dark .note-blue {
+            background-color: #1E40AF;
+            color: #BFDBFE;
+        }
+
+        .dark .note-purple {
+            background-color: #6B21A8;
+            color: #E9D5FF;
+        }
+
+        .note-header {
+            padding: 8px 12px;
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            border-bottom: 1px dashed rgba(0, 0, 0, 0.15);
+        }
+
+        .dark .note-header {
+            border-bottom-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .note-title-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        .note-title-input:focus {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .dark .note-title-input:focus {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .note-body {
+            flex: 1;
+            padding: 10px 12px;
+            outline: none;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-y: auto;
+            min-height: 120px;
+            resize: none;
+            background: transparent;
+            border: none;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        .note-body:empty::before {
+            content: '输入便签内容...';
+            opacity: 0.5;
+        }
+
+        .note-footer {
+            padding: 6px 12px;
+            font-size: 11px;
+            opacity: 0.7;
+            border-top: 1px dashed rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .dark .note-footer {
+            border-top-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .color-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+
+        .color-dot:hover {
+            transform: scale(1.2);
+        }
+
+        .color-dot.active {
+            border-color: #1F2937;
+            transform: scale(1.15);
+        }
+
+        .dark .color-dot.active {
+            border-color: #F3F4F6;
+        }
+
+        .board-area {
+            position: relative;
+            width: 100%;
+            min-height: calc(100vh - 140px);
+            overflow: auto;
+            background-image:
+                radial-gradient(circle, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        .dark .board-area {
+            background-image:
+                radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+        }
+
+        .empty-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .btn-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease;
+            color: inherit;
+            opacity: 0.7;
+        }
+
+        .btn-icon:hover {
+            background: rgba(0, 0, 0, 0.1);
+            opacity: 1;
+        }
+
+        .dark .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+    </style>
+</head>
+
+<body class="font-inter bg-gray-50 text-dark min-h-screen flex flex-col">
+    <!-- 顶部导航 -->
+    <header class="sticky top-0 z-50 glass-effect border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-medium">
+                    <i class="fa fa-arrow-left"></i>
+                    <span>返回主页</span>
+                </a>
+                <div class="flex items-center gap-2 ml-2">
+                    <i class="fa fa-sticky-note text-primary text-xl"></i>
+                    <h1 class="text-xl font-bold text-primary">便签本</h1>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+                <div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/60 dark:bg-gray-700/60">
+                    <span class="text-xs text-gray-500 mr-1 hidden sm:inline">颜色:</span>
+                    <button class="color-dot note-yellow active" data-color="yellow" title="黄色"></button>
+                    <button class="color-dot note-pink" data-color="pink" title="粉色"></button>
+                    <button class="color-dot note-green" data-color="green" title="绿色"></button>
+                    <button class="color-dot note-blue" data-color="blue" title="蓝色"></button>
+                    <button class="color-dot note-purple" data-color="purple" title="紫色"></button>
+                </div>
+
+                <button id="add-note-btn" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium player-shadow">
+                    <i class="fa fa-plus"></i>
+                    <span>新建便签</span>
+                </button>
+
+                <button id="theme-toggle" class="w-10 h-10 rounded-lg bg-white/60 dark:bg-gray-700/60 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="切换深色模式">
+                    <i class="fa fa-moon-o dark:hidden"></i>
+                    <i class="fa fa-sun-o hidden dark:inline"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 便签画板 -->
+    <main class="flex-1">
+        <div id="board" class="board-area">
+            <div id="empty-hint" class="empty-hint text-gray-400 dark:text-gray-600">
+                <i class="fa fa-sticky-note text-6xl mb-4 opacity-40"></i>
+                <p class="text-lg">画板空空如也</p>
+                <p class="text-sm mt-2">点击右上角「新建便签」开始记录灵感</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        (function () {
+            const STORAGE_KEY = 'stickyNotesData';
+            const THEME_KEY = 'stickyNotesTheme';
+            const board = document.getElementById('board');
+            const emptyHint = document.getElementById('empty-hint');
+            const addNoteBtn = document.getElementById('add-note-btn');
+            const themeToggle = document.getElementById('theme-toggle');
+            const colorDots = document.querySelectorAll('.color-dot');
+
+            let notes = [];
+            let currentColor = 'yellow';
+            let zCounter = 10;
+
+            function loadTheme() {
+                const t = localStorage.getItem(THEME_KEY);
+                if (t === 'dark') {
+                    document.documentElement.classList.add('dark');
+                }
+            }
+
+            function saveTheme() {
+                localStorage.setItem(THEME_KEY,
+                    document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            }
+
+            function toggleTheme() {
+                document.documentElement.classList.toggle('dark');
+                saveTheme();
+            }
+
+            function loadNotes() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        notes = JSON.parse(raw);
+                    }
+                } catch (e) {
+                    notes = [];
+                }
+            }
+
+            function saveNotes() {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+            }
+
+            function updateEmptyHint() {
+                emptyHint.style.display = notes.length === 0 ? 'block' : 'none';
+            }
+
+            function formatDate(ts) {
+                const d = new Date(ts);
+                const pad = (n) => String(n).padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            }
+
+            function createNoteElement(note) {
+                const card = document.createElement('div');
+                card.className = `note-card note-${note.color}`;
+                card.dataset.id = note.id;
+                card.style.left = note.x + 'px';
+                card.style.top = note.y + 'px';
+                card.style.zIndex = note.z || ++zCounter;
+
+                card.innerHTML = `
+                    <div class="note-header">
+                        <input type="text" class="note-title-input" placeholder="标题" value="${escapeHtml(note.title || '')}">
+                        <div class="flex items-center gap-1">
+                            <button class="btn-icon change-color-btn" title="换色">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <button class="btn-icon delete-btn" title="删除">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <textarea class="note-body scrollbar-custom" placeholder="输入便签内容...">${escapeHtml(note.content || '')}</textarea>
+                    <div class="note-footer">
+                        <span class="note-date">${formatDate(note.updatedAt || note.createdAt)}</span>
+                        <span class="text-xs opacity-60">拖拽顶部移动</span>
+                    </div>
+                `;
+
+                attachNoteEvents(card, note);
+                return card;
+            }
+
+            function escapeHtml(str) {
+                if (str == null) return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            function attachNoteEvents(card, note) {
+                const header = card.querySelector('.note-header');
+                const titleInput = card.querySelector('.note-title-input');
+                const bodyInput = card.querySelector('.note-body');
+                const deleteBtn = card.querySelector('.delete-btn');
+                const changeColorBtn = card.querySelector('.change-color-btn');
+                const dateLabel = card.querySelector('.note-date');
+
+                titleInput.addEventListener('input', () => {
+                    note.title = titleInput.value;
+                    note.updatedAt = Date.now();
+                    dateLabel.textContent = formatDate(note.updatedAt);
+                    saveNotes();
+                });
+
+                bodyInput.addEventListener('input', () => {
+                    note.content = bodyInput.value;
+                    note.updatedAt = Date.now();
+                    dateLabel.textContent = formatDate(note.updatedAt);
+                    saveNotes();
+                    autoResize(bodyInput);
+                });
+
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (confirm('确定要删除这条便签吗？')) {
+                        notes = notes.filter((n) => n.id !== note.id);
+                        card.remove();
+                        saveNotes();
+                        updateEmptyHint();
+                    }
+                });
+
+                changeColorBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const colors = ['yellow', 'pink', 'green', 'blue', 'purple'];
+                    const idx = colors.indexOf(note.color);
+                    const next = colors[(idx + 1) % colors.length];
+                    card.classList.remove(`note-${note.color}`);
+                    card.classList.add(`note-${next}`);
+                    note.color = next;
+                    note.updatedAt = Date.now();
+                    dateLabel.textContent = formatDate(note.updatedAt);
+                    saveNotes();
+                });
+
+                header.addEventListener('mousedown', (e) => {
+                    if (e.target.closest('.btn-icon')) return;
+                    startDrag(e, card, note);
+                });
+
+                card.addEventListener('mousedown', () => {
+                    zCounter++;
+                    card.style.zIndex = zCounter;
+                    note.z = zCounter;
+                    saveNotes();
+                });
+
+                autoResize(bodyInput);
+            }
+
+            function autoResize(el) {
+                el.style.height = 'auto';
+                el.style.height = Math.max(120, el.scrollHeight) + 'px';
+            }
+
+            function startDrag(e, card, note) {
+                e.preventDefault();
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const origLeft = note.x;
+                const origTop = note.y;
+
+                card.classList.add('dragging');
+
+                function onMove(ev) {
+                    const dx = ev.clientX - startX;
+                    const dy = ev.clientY - startY;
+                    const newX = Math.max(0, origLeft + dx);
+                    const newY = Math.max(0, origTop + dy);
+                    card.style.left = newX + 'px';
+                    card.style.top = newY + 'px';
+                }
+
+                function onUp(ev) {
+                    const dx = ev.clientX - startX;
+                    const dy = ev.clientY - startY;
+                    note.x = Math.max(0, origLeft + dx);
+                    note.y = Math.max(0, origTop + dy);
+                    card.classList.remove('dragging');
+                    saveNotes();
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                }
+
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            }
+
+            function addNote() {
+                const boardRect = board.getBoundingClientRect();
+                const viewportW = window.innerWidth;
+                const offsetX = Math.max(0, Math.min(viewportW - 260, (viewportW - 240) / 2 - boardRect.left + (Math.random() * 60 - 30)));
+                const offsetY = Math.max(20, window.scrollY + 120 + (Math.random() * 60 - 30));
+
+                const note = {
+                    id: 'n_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+                    title: '',
+                    content: '',
+                    color: currentColor,
+                    x: offsetX,
+                    y: offsetY,
+                    z: ++zCounter,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                };
+
+                notes.push(note);
+                board.appendChild(createNoteElement(note));
+                saveNotes();
+                updateEmptyHint();
+            }
+
+            function renderAll() {
+                notes.forEach((note) => {
+                    board.appendChild(createNoteElement(note));
+                });
+                updateEmptyHint();
+            }
+
+            function init() {
+                loadTheme();
+                loadNotes();
+                renderAll();
+            }
+
+            addNoteBtn.addEventListener('click', addNote);
+            themeToggle.addEventListener('click', toggleTheme);
+
+            colorDots.forEach((dot) => {
+                dot.addEventListener('click', () => {
+                    colorDots.forEach((d) => d.classList.remove('active'));
+                    dot.classList.add('active');
+                    currentColor = dot.dataset.color;
+                });
+            });
+
+            init();
+        })();
+    </script>
+</body>
+
+</html>
