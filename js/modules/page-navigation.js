@@ -31,6 +31,7 @@ const PageNavigation = (() => {
     // 处理初始路由
     function handleInitialRoute() {
         const currentPath = window.location.pathname;
+        const normalizedPath = currentPath.startsWith('/') ? currentPath.slice(1) : currentPath;
 
         // 检查URL查询参数中是否有page参数（来自子页面重定向）
         const urlParams = new URLSearchParams(window.location.search);
@@ -38,19 +39,27 @@ const PageNavigation = (() => {
 
         // 优先处理查询参数中的页面路径
         if (pageParam && pageParam.includes('/pages/') && pageParam.endsWith('.html')) {
-            const pageUrl = pageParam;
+            // 确保 pageUrl 是相对路径，避免脱离项目前缀
+            let pageUrl = pageParam;
+            if (pageUrl.startsWith('/')) pageUrl = pageUrl.slice(1);
             const filename = pageUrl.split('/').pop().replace('.html', '');
             const pageTitle = decodeURIComponent(filename);
 
             console.log('从URL参数检测到子页面请求:', pageUrl);
             loadPage(pageUrl, pageTitle);
 
-            // 更新URL，移除查询参数，保持URL干净
+            // 更新URL，移除查询参数，保持URL干净（用相对路径避免脱离项目前缀）
             window.history.replaceState({}, pageTitle, pageUrl);
         }
         // 如果直接访问的是子页面URL（在应用框架的上下文中）
-        else if (currentPath !== '/' && currentPath.includes('/pages/') && currentPath.endsWith('.html')) {
-            const pageUrl = currentPath;
+        else if (normalizedPath.includes('/pages/') && normalizedPath.endsWith('.html')) {
+            // 提取相对路径（去掉可能的项目前缀）
+            let pageUrl = normalizedPath;
+            // 如果路径中包含 pages/，截取 pages/xxx.html 这部分
+            const pagesIndex = pageUrl.indexOf('pages/');
+            if (pagesIndex >= 0) {
+                pageUrl = pageUrl.slice(pagesIndex);
+            }
             const filename = pageUrl.split('/').pop().replace('.html', '');
             const pageTitle = decodeURIComponent(filename);
 
@@ -108,9 +117,10 @@ const PageNavigation = (() => {
         updateHistoryButtons();
 
         // 更新浏览器URL而不刷新页面
-        // 确保URL是相对路径格式
-        const pagePath = url.startsWith('/') ? url : `/${url}`;
-        window.history.pushState({ page: url, title: title }, title, pagePath);
+        // 使用不带 / 前缀的相对路径，让浏览器基于当前页面（/StreePortal/）正确解析
+        // 绝对根路径会脱离 GitHub Pages 的项目前缀，导致刷新后 404
+        const relativePath = url.startsWith('/') ? url.slice(1) : url;
+        window.history.pushState({ page: url, title: title }, title, relativePath);
 
         // 显示iframe视图
         cardsView.classList.add('hidden');
@@ -125,7 +135,8 @@ const PageNavigation = (() => {
         cardsView.classList.remove('hidden');
 
         // 更新浏览器URL为根路径
-        window.history.pushState({}, 'StreePortal 主页', '/');
+        // 用空字符串保持在当前目录（/StreePortal/），不要用 '/' 那会跳到域根
+        window.history.pushState({}, 'StreePortal 主页', '');
     }
 
     // 显示设置视图
@@ -168,8 +179,8 @@ const PageNavigation = (() => {
             updateHistoryButtons();
 
             // 更新浏览器URL
-            const pagePath = url.startsWith('/') ? url : `/${url}`;
-            window.history.pushState({ page: url, title: title }, title, pagePath);
+            const relativePath = url.startsWith('/') ? url.slice(1) : url;
+            window.history.pushState({ page: url, title: title }, title, relativePath);
         }
     }
 
@@ -182,8 +193,8 @@ const PageNavigation = (() => {
             updateHistoryButtons();
 
             // 更新浏览器URL
-            const pagePath = url.startsWith('/') ? url : `/${url}`;
-            window.history.pushState({ page: url, title: title }, title, pagePath);
+            const relativePathFwd = url.startsWith('/') ? url.slice(1) : url;
+            window.history.pushState({ page: url, title: title }, title, relativePathFwd);
         }
     }
 
