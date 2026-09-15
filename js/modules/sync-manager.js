@@ -112,47 +112,140 @@ const SyncManager = (() => {
     // ===== GitHub Gist API =====
     const GIST_API = 'https://api.github.com';
 
+    // 分析 Token 类型，给出诊断提示
+    function diagnoseTokenType(token) {
+        if (!token) return { type: 'empty', label: '未填写', color: 'text-gray-400', ok: false };
+        if (token.startsWith('ghp_')) return { type: 'classic', label: 'Classic Token ✅', color: 'text-green-600', ok: true };
+        if (token.startsWith('github_pat_')) return { type: 'fine', label: 'Fine-grained Token ⚠️', color: 'text-orange-500', ok: true, warn: 'Fine-grained Token 对 Gist 支持不完整，建议改用 Classic' };
+        if (token.startsWith('gho_')) return { type: 'oauth', label: 'OAuth Token', color: 'text-purple-500', ok: true };
+        if (token.startsWith('ghu_')) return { type: 'user', label: 'User Token', color: 'text-purple-500', ok: true };
+        if (token.startsWith('ghs_')) return { type: 'server', label: 'Server Token', color: 'text-purple-500', ok: true };
+        if (token.startsWith('ghr_')) return { type: 'app', label: 'App Token', color: 'text-purple-500', ok: true };
+        return { type: 'unknown', label: '未知格式', color: 'text-red-500', ok: false };
+    }
+
     async function githubRequest(method, path, body) {
         const token = getToken();
         if (!token) throw new Error('缺少 GitHub Token');
-        const res = await fetch(GIST_API + path, {
+
+        // 构建 headers — 只在有 body 时才加 Content-Type
+        // GET 请求带 Content-Type 会触发额外的 CORS preflight
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github+json'
+        };
+        if (body) {
+            headers['Content-Type'] = 'application/json';
+        }
+
+        const url = GIST_API + path;
+        console.log(`[GitHub API] ${method} ${path}`);
+
+        const res = await fetch(url, {
             method,
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/vnd.github+json',
-                'X-GitHub-Api-Version': '2022-11-28',
-                'Content-Type': 'application/json'
-            },
+            headers,
             body: body ? JSON.stringify(body) : undefined
         });
+
+        console.log(`[GitHub API] → ${res.status} ${res.statusText}`);
+        console.log(`[GitHub API] RateLimit: ${res.headers.get('x-ratelimit-remaining')}/${res.headers.get('x-ratelimit-limit')}`);
+
         if (!res.ok) {
             let details = '';
+            let rawBody = '';
             try {
-                const json = await res.json();
-                details = json.message || res.statusText;
-                if (json.documentation_url) details += ` (${json.documentation_url})`;
+                rawBody = await res.text();
+                try {
+                    const json = JSON.parse(rawBody);
+                    details = json.message || res.statusText;
+                } catch {
+                    details = rawBody || res.statusText;
+                }
             } catch {
-                details = await res.text().catch(() => res.statusText);
+                details = res.statusText;
             }
-            // 对 401 给出友好提示
-            if (res.status === 401) {
-                throw new Error('Token 无效或已过期。请确认 Token 未被删除，且包含 gist 权限。');
-            }
-            if (res.status === 403) {
-                throw new Error('权限不足。Token 可能没有 gist 范围，或触发了 GitHub 速率限制。');
-            }
-            throw new Error(`${res.status}: ${details}`);
+            // 抛出包含原始响应的完整信息
+            const fullError = {
+                status: res.status,
+                statusText: res.statusText,
+                message: details,
+                rawBody: rawBody.slice(0, 500),
+                rateLimit: res.headers.get('x-ratelimit-remaining')
+            };
+            console.error('[GitHub API] Error:', fullError);
+            throw new Error(`HTTP ${res.status}: ${details}`);
         }
+
+        // 检查 rate limit 头
+        const remaining = res.headers.get('x-ratelimit-remaining');
+        if (remaining && parseInt(remaining, 10) < 100) {
+            console.warn(`[GitHub API] 速率限制剩余 ${remaining} 次`);
+        }
+
         return res.json();
     }
 
-    // 先验证 Token 是否有效（GET /user）
-    async function verifyToken() {
+    // 直接 curl 测试按钮用的诊断函数
+    async function runDiagnostics() {
+        const token = getToken();
+        const results = [];
+
+        if (!token) {
+            UIHelpers.showToast('请先填写 Token', 'error');
+            return;
+        }
+
+        results.push({ test: 'Token 类型识别', detail: diagnoseTokenType(token).label });
+
         try {
             const user = await githubRequest('GET', '/user');
-            return { ok: true, user: user.login };
+            results.push({ test: 'GET /user (认证)', ok: true, detail: `${user.login} (${user.type})` });
         } catch (e) {
-            return { ok: false, error: e.message };
+            results.push({ test: 'GET /user (认证)', ok: false, detail: e.message });
+        }
+
+        const gistId = getGistId();
+        if (gistId) {
+            try {
+                const gist = await githubRequest('GET', `/gists/${gistId}`);
+                results.push({ test: `GET /gists/${gistId.slice(0, 8)}…`, ok: true, detail: `owner: ${gist.owner?.login || 'unknown'}, files: ${Object.keys(gist.files || {}).length}` });
+            } catch (e) {
+                results.push({ test: `GET /gists/${gistId.slice(0, 8)}…`, ok: false, detail: e.message });
+            }
+        }
+
+        // 显示结果
+        showDiagnostics(results);
+    }
+
+    function showDiagnostics(results) {
+        let html = '<div class="text-left space-y-1">';
+        results.forEach(r => {
+            const icon = r.ok === false ? '❌' : '✅';
+            const color = r.ok === false ? 'text-red-600' : 'text-gray-700';
+            html += `<div class="text-sm"><span>${icon}</span> <strong class="${color}">${r.test}</strong>: ${r.detail}</div>`;
+        });
+        html += '</div>';
+
+        // 用 toast 之外的方式显示 —— 创建一个临时面板
+        const panel = document.createElement('div');
+        panel.className = 'fixed bottom-4 right-4 bg-white border border-gray-200 rounded-lg shadow-xl p-4 max-w-md z-[10000]';
+        panel.innerHTML = html + '<button onclick="this.parentElement.remove()" class="mt-3 px-3 py-1 bg-gray-100 rounded text-sm hover:bg-gray-200">关闭</button>';
+        document.body.appendChild(panel);
+    }
+
+    // 实时显示 Token 类型
+    function updateTokenTypeHint() {
+        if (!gistTokenEl) return;
+        const token = gistTokenEl.value.trim();
+        const info = diagnoseTokenType(token);
+        const hintEl = document.getElementById('gist-token-hint');
+        if (!hintEl) return;
+        if (token) {
+            hintEl.textContent = info.label;
+            hintEl.className = `text-xs ${info.color} mt-1`;
+        } else {
+            hintEl.textContent = '';
         }
     }
 
@@ -421,6 +514,9 @@ const SyncManager = (() => {
 
     // ===== 事件绑定 =====
     function bindEvents() {
+        // Token 输入 → 实时显示类型
+        gistTokenEl?.addEventListener('input', updateTokenTypeHint);
+
         // 导航栏的云朵图标按钮 → 触发上传
         if (syncBtn) {
             syncBtn.addEventListener('click', () => {
@@ -432,6 +528,7 @@ const SyncManager = (() => {
         }
 
         gistConnectBtn?.addEventListener('click', connectOrCreate);
+        document.getElementById('gist-test-btn')?.addEventListener('click', runDiagnostics);
         gistPushBtn?.addEventListener('click', () => pushToGist());
         gistPullBtn?.addEventListener('click', pullFromGist);
         gistDisconnectBtn?.addEventListener('click', disconnectGist);

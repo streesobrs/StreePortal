@@ -1141,6 +1141,7 @@
                                             Token</label>
                                         <input type="password" id="gist-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm font-mono">
+                                        <div id="gist-token-hint" class="text-xs mt-1"></div>
                                         <p class="text-xs text-gray-400 mt-1">
                                             生成地址:
                                             <a href="https://github.com/settings/tokens/new?description=StreePortal&scopes=gist"
@@ -1165,6 +1166,10 @@
                                         <button id="gist-connect-btn"
                                             class="px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors text-sm">
                                             <i class="fa fa-plug mr-1"></i>连接 / 创建
+                                        </button>
+                                        <button id="gist-test-btn"
+                                            class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors text-sm">
+                                            <i class="fa fa-stethoscope mr-1"></i>诊断
                                         </button>
                                         <button id="gist-push-btn" disabled
                                             class="px-4 py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed">
